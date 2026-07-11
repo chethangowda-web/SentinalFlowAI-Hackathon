@@ -1,0 +1,93 @@
+# =============================================================================
+# SentinelFlow - Render Blueprint Configuration
+# =============================================================================
+# Deploy the backend as a Web Service on Render.
+# 
+# How to use:
+#   1. Push this repo to GitHub
+#   2. In Render Dashboard, click "New Blueprint"
+#   3. Connect your GitHub repo
+#   4. Render auto-detects this render.yaml and provisions the service
+# =============================================================================
+
+services:
+  - type: web
+    name: sentinelflow-api
+    env: node
+    region: singapore
+    plan: starter
+    buildCommand: |
+      # Render handles npm install automatically (based on package.json in rootDir)
+      # No additional build steps needed - Mastra output is pre-built
+      echo "Build complete"
+    startCommand: node .mastra/output/index.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: WS_PORT
+        value: "3001"
+      - key: LOG_LEVEL
+        value: info
+
+      # Database (set these in Render dashboard as "secret files" or env vars)
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: DB_POOL_SIZE
+        value: "20"
+
+      # AI Providers
+      - key: GROQ_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+
+      # Qdrant Vector DB
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_COLLECTION
+        value: sentinelflow-incidents
+
+      # JWT
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ACCESS_EXPIRY
+        value: "15m"
+      - key: JWT_REFRESH_EXPIRY
+        value: "7d"
+
+      # Enkrypt AI Governance
+      - key: ENKRYPTAI_API_KEY
+        sync: false
+      - key: ENKRYPTAI_BASE_URL
+        value: https://api.enkryptai.com
+      - key: ENKRYPTAI_GUARDRAIL_NAME
+        sync: false
+
+      # Embedding
+      - key: HUGGINGFACE_EMBEDDING_MODEL
+        value: BAAI/bge-large-en-v1.5
+
+      # Notifications (optional)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+      - key: TEAMS_WEBHOOK_URL
+        sync: false
+      - key: DISCORD_WEBHOOK_URL
+        sync: false
