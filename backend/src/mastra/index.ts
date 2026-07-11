@@ -237,7 +237,15 @@ export const mastra = new Mastra({
   },
   server: {
     cors: {
-      origin: ['https://app.sentinelflow.io', 'https://sentinelflow.vercel.app', 'https://sentinal-flow-ai-hackathon-murex.vercel.app', 'http://localhost:5173'],
+      origin: (origin: string) => {
+        const allowed = [
+          'https://app.sentinelflow.io',
+          'https://sentinelflow.vercel.app',
+          'http://localhost:5173',
+        ];
+        if (allowed.includes(origin) || origin.endsWith('.vercel.app')) return origin;
+        return null;
+      },
       allowHeaders: ['Content-Type', 'Authorization', 'x-mastra-client-type', 'x-mastra-dev-playground', 'x-request-id', 'X-Tenant-Id'],
       allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       exposeHeaders: ['Content-Length', 'X-Requested-With'],
