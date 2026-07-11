@@ -10,8 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Sun, Moon, User, Shield, Building2, Palette, Globe, Key,
-  Bell, CreditCard, Activity, FileText, Lock, Eye,
+  Sun, Moon, User, Building2, Palette,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,14 +27,11 @@ const itemVariants = {
 const SETTINGS_TABS = [
   { value: 'profile', label: 'Profile', icon: User },
   { value: 'organization', label: 'Organization', icon: Building2 },
-  { value: 'api-keys', label: 'API Keys', icon: Key },
-  { value: 'security', label: 'Security', icon: Shield },
-  { value: 'notifications', label: 'Notifications', icon: Bell },
   { value: 'appearance', label: 'Appearance', icon: Palette },
 ];
 
 export function SettingsPage() {
-  const { user, activeOrganization, updateProfile, sessions } = useAuthStore();
+  const { user, activeOrganization, updateProfile } = useAuthStore();
   const { theme, setTheme } = useUIStore();
   const [name, setName] = React.useState(user?.name || '');
   const [timezone, setTimezone] = React.useState(user?.timezone || 'UTC');
@@ -172,92 +168,7 @@ export function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* API Keys Tab */}
-          <TabsContent value="api-keys" className="space-y-6 mt-6">
-            <Card className="bg-card border-border/40 rounded-xl">
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Key className="w-4 h-4 text-primary" />
-                  API Keys
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
-                  <div className="p-3 rounded-full bg-accent/30">
-                    <Key className="w-6 h-6 text-muted-foreground/40" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">No API keys configured yet</p>
-                  <Button variant="outline" size="sm" className="text-xs cursor-pointer rounded-lg">
-                    Generate API Key
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Security Tab */}
-          <TabsContent value="security" className="space-y-6 mt-6">
-            <Card className="bg-card border-border/40 rounded-xl">
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  Active Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {sessions.length > 0 ? (
-                  <div className="space-y-3">
-                    {sessions.map((session) => (
-                      <div key={session.id} className="flex items-center justify-between p-3 rounded-xl bg-accent/20 border border-border/30">
-                        <div className="flex items-center gap-3">
-                          <Globe className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-xs font-medium text-foreground">{session.device}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono">{session.ipAddress}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {session.isCurrent && (
-                            <Badge variant="secondary" className="text-[10px]">Current</Badge>
-                          )}
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(session.lastActiveAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
-                    <div className="p-3 rounded-full bg-accent/30">
-                      <Lock className="w-6 h-6 text-muted-foreground/40" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">No active sessions</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6 mt-6">
-            <Card className="bg-card border-border/40 rounded-xl">
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-primary" />
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
-                  <div className="p-3 rounded-full bg-accent/30">
-                    <Bell className="w-6 h-6 text-muted-foreground/40" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">Notification settings coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Appearance Tab */}
           <TabsContent value="appearance" className="space-y-6 mt-6">

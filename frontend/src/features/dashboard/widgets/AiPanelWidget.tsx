@@ -8,12 +8,11 @@ interface AiPanelWidgetProps {
 }
 
 export function AiPanelWidget({ intelligenceData }: AiPanelWidgetProps) {
-  const stats = intelligenceData?.stats || {
-    hallucinationScore: 0.02,
-    learningAccuracy: 98.4,
-    decisionConfidence: 94.2,
-    recommendationSuccessPct: 96.5,
-  };
+  const stats = intelligenceData?.stats;
+
+  if (!stats) {
+    return null;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

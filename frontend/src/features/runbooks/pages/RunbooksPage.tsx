@@ -1,39 +1,31 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import {
-  Play, CheckSquare, Clock, AlertTriangle, CheckCircle,
-  History, Zap, Shield, ArrowRight, Search,
+  Play, CheckSquare, Clock, CheckCircle,
+  History, Zap, Shield, Search,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import runbookApi, { type Runbook, type RunbookExecution } from '@/api/runbook';
 
-const RUNBOOKS = [
-  { id: '1', name: 'Database Pool Auto-Scaling', duration: '3s', trigger: 'Auto', lastRun: '2m ago', success: true, executions: 156 },
-  { id: '2', name: 'Restart Auth Cluster Pods', duration: '12s', trigger: 'Approval', lastRun: '1h ago', success: true, executions: 89 },
-  { id: '3', name: 'Flush Redis Cache Sessions', duration: '1s', trigger: 'Auto', lastRun: '30m ago', success: true, executions: 234 },
-  { id: '4', name: 'Scale Up API Gateway', duration: '8s', trigger: 'Auto', lastRun: '15m ago', success: true, executions: 67 },
-  { id: '5', name: 'Certificate Renewal', duration: '45s', trigger: 'Approval', lastRun: '1d ago', success: false, executions: 23 },
-  { id: '6', name: 'Rollback Deployments', duration: '25s', trigger: 'Manual', lastRun: '3d ago', success: true, executions: 12 },
-];
+function RunbookCard({ runbook, index }: { runbook: Runbook; index: number }) {
+  const queryClient = useQueryClient();
 
-const EXECUTION_HISTORY = [
-  { id: 'e1', runbook: 'Database Pool Auto-Scaling', status: 'SUCCESS', duration: '3.2s', time: '2m ago', by: 'Auto-trigger' },
-  { id: 'e2', runbook: 'Flush Redis Cache Sessions', status: 'SUCCESS', duration: '0.9s', time: '30m ago', by: 'Auto-trigger' },
-  { id: 'e3', runbook: 'Scale Up API Gateway', status: 'SUCCESS', duration: '7.8s', time: '15m ago', by: 'Incident INC-203' },
-  { id: 'e4', runbook: 'Restart Auth Cluster Pods', status: 'FAILED', duration: '12.1s', time: '1h ago', by: 'Manual — Alice' },
-  { id: 'e5', runbook: 'Certificate Renewal', status: 'SUCCESS', duration: '44.5s', time: '1d ago', by: 'Scheduled' },
-];
-
-function RunbookCard({ runbook, index }: { runbook: typeof RUNBOOKS[0]; index: number }) {
-  const [isExecuting, setIsExecuting] = useState(false);
-
-  const handleExecute = () => {
-    setIsExecuting(true);
-    setTimeout(() => setIsExecuting(false), 2000);
-  };
+  const executeMutation = useMutation({
+    mutationFn: () => runbookApi.executeRunbook(runbook.id, 'manual'),
+    onSuccess: (_data) => {
+      toast.success(`Runbook "${runbook.name}" triggered successfully`);
+      queryClient.invalidateQueries({ queryKey: ['runbooks'] });
+      queryClient.invalidateQueries({ queryKey: ['runbook-executions'] });
+    },
+    onError: () => toast.error(`Failed to execute "${runbook.name}"`),
+  });
 
   return (
     <motion.div
@@ -46,11 +38,13 @@ function RunbookCard({ runbook, index }: { runbook: typeof RUNBOOKS[0]; index: n
         <div className="flex items-start gap-3">
           <div className={cn(
             'p-2 rounded-lg',
-            runbook.trigger === 'Auto' ? 'bg-emerald-500/10' : runbook.trigger === 'Approval' ? 'bg-amber-500/10' : 'bg-blue-500/10'
+            runbook.severity === 'LOW' || runbook.triggerEvent === 'auto' ? 'bg-emerald-500/10' :
+            runbook.approvalRequired ? 'bg-amber-500/10' : 'bg-blue-500/10'
           )}>
             <CheckSquare className={cn(
               'w-4 h-4',
-              runbook.trigger === 'Auto' ? 'text-emerald-400' : runbook.trigger === 'Approval' ? 'text-amber-400' : 'text-blue-400'
+              runbook.severity === 'LOW' || runbook.triggerEvent === 'auto' ? 'text-emerald-400' :
+              runbook.approvalRequired ? 'text-amber-400' : 'text-blue-400'
             )} />
           </div>
           <div>
@@ -58,35 +52,31 @@ function RunbookCard({ runbook, index }: { runbook: typeof RUNBOOKS[0]; index: n
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="outline" className={cn(
                 'text-[9px] px-1.5 py-0',
-                runbook.trigger === 'Auto' ? 'border-emerald-500/20 text-emerald-400' :
-                runbook.trigger === 'Approval' ? 'border-amber-500/20 text-amber-400' :
+                runbook.triggerEvent === 'auto' ? 'border-emerald-500/20 text-emerald-400' :
+                runbook.approvalRequired ? 'border-amber-500/20 text-amber-400' :
                 'border-blue-500/20 text-blue-400'
               )}>
-                {runbook.trigger}
+                {runbook.approvalRequired ? 'Approval' : runbook.triggerEvent === 'auto' ? 'Auto' : 'Manual'}
               </Badge>
-              <span className="text-[10px] text-muted-foreground">{runbook.executions} runs</span>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground font-mono">{runbook.duration}</span>
         </div>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="w-3 h-3 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground">Last {runbook.lastRun}</span>
+          <span className="text-[10px] text-muted-foreground">Service: {runbook.service}</span>
         </div>
         <Button
           size="sm"
-          onClick={handleExecute}
-          disabled={isExecuting}
+          onClick={() => executeMutation.mutate()}
+          disabled={executeMutation.isPending || !runbook.enabled}
           className={cn(
             'gap-1.5 text-[11px] h-8 px-3 cursor-pointer transition-all',
-            isExecuting && 'opacity-70'
+            executeMutation.isPending && 'opacity-70'
           )}
         >
-          {isExecuting ? (
+          {executeMutation.isPending ? (
             <>
               <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
               Executing...
@@ -106,15 +96,83 @@ function RunbookCard({ runbook, index }: { runbook: typeof RUNBOOKS[0]; index: n
 export function RunbooksPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredRunbooks = RUNBOOKS.filter(rb =>
+  const { data: runbooks, isLoading, isError, error } = useQuery({
+    queryKey: ['runbooks'],
+    queryFn: runbookApi.listRunbooks,
+    refetchInterval: 30000,
+  });
+
+  const { data: allExecutions } = useQuery({
+    queryKey: ['runbook-executions'],
+    queryFn: async () => {
+      if (!runbooks || runbooks.length === 0) return [];
+      const results = await Promise.allSettled(
+        runbooks.slice(0, 5).map((rb) => runbookApi.executionHistory(rb.id))
+      );
+      return results
+        .filter((r) => r.status === 'fulfilled')
+        .flatMap((r) => (r as PromiseFulfilledResult<RunbookExecution[]>).value)
+        .slice(0, 10);
+    },
+    enabled: !!runbooks && runbooks.length > 0,
+    refetchInterval: 30000,
+  });
+
+  const filteredRunbooks = (runbooks || []).filter((rb) =>
     rb.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (isLoading) {
+    return (
+      <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Operational Runbooks</h1>
+          <p className="text-sm text-muted-foreground">Automated remediation procedures and incident response playbooks</p>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+        </div>
+        <Skeleton className="h-9 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Operational Runbooks</h1>
+          <p className="text-sm text-muted-foreground">Automated remediation procedures and incident response playbooks</p>
+        </div>
+        <div className="text-center text-xs text-red-400 py-12 border rounded-lg bg-card/20">
+          Failed to load runbooks: {(error as Error)?.message || 'Unknown error'}
+        </div>
+      </div>
+    );
+  }
+
+  if (!runbooks || runbooks.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Operational Runbooks</h1>
+          <p className="text-sm text-muted-foreground">Automated remediation procedures and incident response playbooks</p>
+        </div>
+        <div className="text-center text-xs text-muted-foreground py-12 border rounded-lg bg-card/20">
+          No runbooks found.
+        </div>
+      </div>
+    );
+  }
+
   const stats = {
-    total: RUNBOOKS.length,
-    auto: RUNBOOKS.filter(r => r.trigger === 'Auto').length,
-    approval: RUNBOOKS.filter(r => r.trigger === 'Approval').length,
-    success: RUNBOOKS.filter(r => r.success).length,
+    total: runbooks.length,
+    auto: runbooks.filter((r) => r.triggerEvent === 'auto' || !r.approvalRequired).length,
+    approval: runbooks.filter((r) => r.approvalRequired).length,
+    enabled: runbooks.filter((r) => r.enabled).length,
   };
 
   return (
@@ -124,7 +182,6 @@ export function RunbooksPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Operational Runbooks</h1>
@@ -132,7 +189,6 @@ export function RunbooksPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
         <Card className="bg-card border-border/40 rounded-xl">
           <CardContent className="p-3 flex items-center gap-3">
@@ -155,12 +211,11 @@ export function RunbooksPage() {
         <Card className="bg-card border-border/40 rounded-xl">
           <CardContent className="p-3 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-emerald-500/10"><CheckCircle className="w-4 h-4 text-emerald-400" /></div>
-            <div><p className="text-[10px] text-muted-foreground">Success Rate</p><p className="text-lg font-bold font-mono">{(stats.success / stats.total * 100).toFixed(0)}%</p></div>
+            <div><p className="text-[10px] text-muted-foreground">Enabled</p><p className="text-lg font-bold font-mono">{stats.enabled}</p></div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
         <Input
@@ -171,7 +226,6 @@ export function RunbooksPage() {
         />
       </div>
 
-      {/* Runbooks Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredRunbooks.map((rb, i) => (
           <RunbookCard key={rb.id} runbook={rb} index={i} />
@@ -186,7 +240,6 @@ export function RunbooksPage() {
         )}
       </div>
 
-      {/* Execution History */}
       <Card className="bg-card border-border/40 rounded-xl overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
@@ -207,22 +260,27 @@ export function RunbooksPage() {
                 </tr>
               </thead>
               <tbody>
-                {EXECUTION_HISTORY.map((exec) => (
+                {allExecutions && allExecutions.length > 0 ? allExecutions.map((exec) => (
                   <tr key={exec.id} className="hover:bg-accent/10 transition-colors">
-                    <td className="font-medium text-foreground text-xs">{exec.runbook}</td>
+                    <td className="font-medium text-foreground text-xs">{exec.runbookId}</td>
                     <td>
-                      <Badge variant={exec.status === 'SUCCESS' ? 'default' : 'destructive'} className={cn(
+                      <Badge variant={exec.status === 'COMPLETED' ? 'default' : exec.status === 'FAILED' ? 'destructive' : 'secondary'} className={cn(
                         'text-[9px] px-1.5 py-0',
-                        exec.status === 'SUCCESS' && 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15'
+                        exec.status === 'COMPLETED' && 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15',
+                        exec.status === 'FAILED' && 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/15'
                       )}>
                         {exec.status}
                       </Badge>
                     </td>
-                    <td className="font-mono text-xs">{exec.duration}</td>
-                    <td className="text-muted-foreground text-xs">{exec.time}</td>
-                    <td className="text-xs">{exec.by}</td>
+                    <td className="font-mono text-xs">{exec.endTime ? `${Math.round((new Date(exec.endTime).getTime() - new Date(exec.startTime).getTime()) / 1000)}s` : '-'}</td>
+                    <td className="text-muted-foreground text-xs">{new Date(exec.startTime).toLocaleString()}</td>
+                    <td className="text-xs">{exec.triggeredBy}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={5} className="text-center text-xs text-muted-foreground py-8">No executions recorded</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

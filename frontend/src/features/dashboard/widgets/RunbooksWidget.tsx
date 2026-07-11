@@ -18,10 +18,7 @@ export function RunbooksWidget() {
     refetchInterval: 30000,
   });
 
-  const executions = data?.executions || [
-    { id: '1', runbookId: 'Database Scaling', status: 'RUNNING', startTime: '1 min ago', triggeredBy: 'AI Agent' },
-    { id: '2', runbookId: 'Cache Session Reset', status: 'COMPLETED', startTime: '2 hours ago', triggeredBy: 'Operator' },
-  ];
+  const executions = data?.executions || [];
 
   return (
     <Card className="bg-card border-border">
