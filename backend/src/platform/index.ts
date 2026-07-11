@@ -1,0 +1,16 @@
+export { configurationManager } from './configuration/ConfigurationManager';
+export { platformLifecycle } from './lifecycle/PlatformLifecycle';
+export { StructuredLogger } from './logging/StructuredLogger';
+export { secretsService } from './secrets/SecretsService';
+export { cacheManager } from './cache/CacheManager';
+export { extensionManager } from './extensions/ExtensionManager';
+export { integrationRegistry } from './integrations/IntegrationRegistry';
+export { featureFlagService } from './feature-flags/FeatureFlagService';
+export { scheduler, workerManager } from './scheduler/Scheduler';
+export { tracer } from './monitoring/Tracer';
+export { performanceService } from './performance/PerformanceService';
+export { healthService } from './health/HealthService';
+export { platformAuditService } from './audit/PlatformAuditService';
+export { backupService } from './backup/BackupService';
+export { APIInfrastructure } from './api/apiInfrastructure';
+export { ChaosTestingHook } from './testing/ChaosTestingHook';

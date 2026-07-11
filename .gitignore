@@ -1,0 +1,45 @@
+# Dependency directories
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.next/
+**/.nuxt/
+**/out/
+
+# Environment files
+.env
+.env.*
+!.env.example
+**/backend/.env
+**/backend/.env.*
+!**/backend/.env.example
+**/frontend/.env.local
+**/frontend/.env.*.local
+
+# Databases and local state
+**/*.db
+**/*.db-*
+**/*.duckdb
+**/*.duckdb.wal
+**/.mastra/
+
+# OS/IDE files
+.DS_Store
+.history/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*

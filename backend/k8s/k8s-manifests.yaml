@@ -1,0 +1,176 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinelflow-config
+  namespace: sentinelflow
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  QDRANT_URL: "http://qdrant.sentinelflow.svc.cluster.local:6333"
+  QDRANT_COLLECTION: "sentinelflow-incidents"
+  CACHE_PROVIDER: "redis"
+  REDIS_URL: "redis://redis.sentinelflow.svc.cluster.local:6379"
+  PROMETHEUS_URL: "http://prometheus.sentinelflow.svc.cluster.local:9090"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sentinelflow-secrets
+  namespace: sentinelflow
+type: Opaque
+data:
+  # Base64 encoded mock API keys
+  GROQ_API_KEY: bW9jay1hcGkta2V5
+  HUGGINGFACE_API_KEY: bW9jay1hcGkta2V5
+  DATABASE_URL: cG9zdGdyZXM6Ly9wb3N0Z3JlczpwYXNzd29yZEBwb3N0Z3JlczoxMjM0L3NlbnRpbmVsZmxvdw==
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentinelflow-backend
+  namespace: sentinelflow
+  labels:
+    app: sentinelflow-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sentinelflow-backend
+  template:
+    metadata:
+      labels:
+        app: sentinelflow-backend
+    spec:
+      containers:
+      - name: backend
+        image: sentinelflow/backend:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1024Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        envFrom:
+        - configMapRef:
+            name: sentinelflow-config
+        - secretRef:
+            name: sentinelflow-secrets
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentinelflow-backend-service
+  namespace: sentinelflow
+spec:
+  selector:
+    app: sentinelflow-backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sentinelflow-ingress
+  namespace: sentinelflow
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: app.sentinelflow.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sentinelflow-backend-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - app.sentinelflow.ai
+    secretName: sentinelflow-tls-secret
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sentinelflow-hpa
+  namespace: sentinelflow
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sentinelflow-backend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 85
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sentinelflow-pdb
+  namespace: sentinelflow
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sentinelflow-backend
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinelflow-network-policy
+  namespace: sentinelflow
+spec:
+  podSelector:
+    matchLabels:
+      app: sentinelflow-backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+  egress:
+  - to:
+    - namespaceSelector: {} # Allow egress to cluster DNS and dependencies
