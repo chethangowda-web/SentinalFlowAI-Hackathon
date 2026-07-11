@@ -59,7 +59,7 @@ import {
   dashboardServicesRoute
 } from '../routes/lifecycleRoutes';
 import { telemetryIngestionRoute, demoStartRoute, demoStopRoute } from '../routes/telemetryRoutes';
-import { healthRoute, dependenciesHealthRoute, metricsRoute, readyHealthRoute } from '../routes/healthRoutes';
+import { healthRoute, dependenciesHealthRoute, metricsRoute, readyHealthRoute, readyRoute, liveRoute } from '../routes/healthRoutes';
 import {
   getNotificationsRoute,
   getNotificationByIdRoute,
@@ -237,11 +237,11 @@ export const mastra = new Mastra({
   },
   server: {
     cors: {
-      origin: '*',
+      origin: ['https://app.sentinelflow.io', 'https://sentinelflow.vercel.app', 'http://localhost:5173'],
       allowHeaders: ['Content-Type', 'Authorization', 'x-mastra-client-type', 'x-mastra-dev-playground', 'x-request-id', 'X-Tenant-Id'],
       allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       exposeHeaders: ['Content-Length', 'X-Requested-With'],
-      credentials: false,
+      credentials: true,
     },
     apiRoutes: [
       registerRoute,
@@ -282,6 +282,8 @@ export const mastra = new Mastra({
       healthRoute,
       dependenciesHealthRoute,
       readyHealthRoute,
+      readyRoute,
+      liveRoute,
       metricsRoute,
       getNotificationsRoute,
       getNotificationByIdRoute,

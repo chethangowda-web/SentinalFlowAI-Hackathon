@@ -6,7 +6,7 @@ import { healthService } from '../platform/health/HealthService';
 export const healthRoute = registerApiRoute('/health', {
   method: 'GET',
   handler: async (c) => {
-    return c.json({ status: 'ok', timestamp: new Date().toISOString() }, 200);
+    return c.json({ status: 'ok', service: 'SentinelFlow API', timestamp: new Date().toISOString() }, 200);
   }
 });
 
@@ -58,5 +58,22 @@ export const readyHealthRoute = registerApiRoute('/health/ready', {
   handler: async (c) => {
     const report = await healthService.checkReadiness();
     return c.json(report, 200);
+  }
+});
+
+export const readyRoute = registerApiRoute('/ready', {
+  method: 'GET',
+  handler: async (c) => {
+    const report = await healthService.checkReadiness();
+    const statusCode = report.status === 'healthy' ? 200 : 503;
+    return c.json({ status: report.status, ...report }, statusCode);
+  }
+});
+
+export const liveRoute = registerApiRoute('/live', {
+  method: 'GET',
+  handler: async (c) => {
+    const alive = await healthService.checkLiveness();
+    return c.json({ status: alive ? 'alive' : 'dead' }, alive ? 200 : 503);
   }
 });

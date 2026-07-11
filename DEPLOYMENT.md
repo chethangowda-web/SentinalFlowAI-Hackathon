@@ -147,16 +147,12 @@ Store these as Render "Secret Files" for sensitive values:
 
 ## GitHub Actions CI/CD
 
-File: `.github/workflows/deploy.yml`
+File: `.github/workflows/ci-cd.yml`
 
 ### Pipeline Stages
 
-1. **Quality Gate** (lint, typecheck, test)
-2. **Build** (Mastra build or use pre-built output)
-3. **Deploy Backend** → Render (via `johnbeynon/render-deploy-action`)
-4. **Deploy Frontend** → Vercel (via `amondnet/vercel-action`)
-5. **Verify** (health checks + page smoke tests)
-6. **Rollback** (automatic on failure)
+1. **validate** (typecheck + build)
+2. **deploy** → Render (via `johnbeynon/render-deploy-action`)
 
 ### GitHub Secrets Required
 
@@ -164,31 +160,6 @@ File: `.github/workflows/deploy.yml`
 |--------|-------------|
 | `RENDER_API_KEY` | Render API key (Settings → API Keys) |
 | `RENDER_SERVICE_ID` | Render service ID (from URL or API) |
-| `VERCEL_TOKEN` | Vercel access token |
-| `VERCEL_ORG_ID` | Vercel organization ID |
-| `VERCEL_PROJECT_ID` | Vercel project ID |
-
----
-
-## Docker Configuration
-
-### Dockerfile
-
-Multi-stage build:
-1. **deps** - Install Node.js dependencies
-2. **build** - Run Mastra build
-3. **runner** - Minimal production image with built output
-
-### docker-compose.yml
-
-Services:
-- `backend` - Mastra AI server (port 3000 API, 3001 WS)
-- `frontend` - Nginx serving static SPA (port 80/443)
-
-Usage:
-```bash
-docker compose --env-file .env up -d
-```
 
 ---
 
