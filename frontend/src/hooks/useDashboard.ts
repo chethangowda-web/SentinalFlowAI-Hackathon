@@ -41,20 +41,30 @@ export function useDashboard() {
     queryKey: ['dashboard', 'health'],
     queryFn: async (): Promise<SystemHealthNode[]> => {
       try {
-        const res = await apiClient.get<{ status: string; dependencies: any }>('/health/ready');
-        const deps = res.data.dependencies;
+        interface ReadinessReport {
+          status: string;
+          database: string;
+          eventBus: string;
+          groq: string;
+          qdrant: string;
+          websocket: string;
+          notifications: string;
+        }
+        const res = await apiClient.get<ReadinessReport>('/health/ready');
+        const r = res.data;
+        const ok = (v: string) => v === 'healthy' ? 'OK' : 'ERROR';
         return [
-          { name: 'Postgres DB', status: (deps.postgres === 'healthy' ? 'OK' : 'ERROR') as 'OK' | 'ERROR', usagePercentage: undefined },
-          { name: 'Qdrant Vector Cluster', status: (deps.qdrant === 'healthy' ? 'OK' : 'ERROR') as 'OK' | 'ERROR', usagePercentage: undefined },
-          { name: 'Prometheus', status: (deps.prometheus === 'healthy' ? 'OK' : 'ERROR') as 'OK' | 'ERROR', usagePercentage: undefined },
-          { name: 'Cache', status: (deps.cache === 'healthy' ? 'OK' : 'ERROR') as 'OK' | 'ERROR', usagePercentage: undefined },
+          { name: 'Postgres DB', status: ok(r.database), usagePercentage: undefined },
+          { name: 'Qdrant Vector Cluster', status: (r.qdrant === 'healthy' ? 'OK' : 'ERROR') as 'OK' | 'ERROR', usagePercentage: undefined },
+          { name: 'Groq AI', status: ok(r.groq), usagePercentage: undefined },
+          { name: 'WebSocket', status: ok(r.websocket), usagePercentage: undefined },
         ];
       } catch {
         return [
           { name: 'Postgres DB', status: 'ERROR' as const, usagePercentage: undefined },
           { name: 'Qdrant Vector Cluster', status: 'ERROR' as const, usagePercentage: undefined },
-          { name: 'Prometheus', status: 'ERROR' as const, usagePercentage: undefined },
-          { name: 'Cache', status: 'ERROR' as const, usagePercentage: undefined },
+          { name: 'Groq AI', status: 'ERROR' as const, usagePercentage: undefined },
+          { name: 'WebSocket', status: 'ERROR' as const, usagePercentage: undefined },
         ];
       }
     },

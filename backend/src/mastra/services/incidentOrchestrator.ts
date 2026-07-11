@@ -148,25 +148,34 @@ export class IncidentOrchestrator {
       // -------------------------------------------------------------------
       try {
         log.info(`[${incidentId}] Persisting authoritative incident record to database`);
+        
+        const decision = report.decisionIntelligence?.decisionReport;
+        const recommendations = decision?.recommendations 
+          ? { actions: decision.recommendations } 
+          : report.incidentAnalysis?.suggestedActions 
+            ? { actions: report.incidentAnalysis.suggestedActions } 
+            : null;
+
         await incidentRepository.createIncident({
           incidentId,
           service: report.service,
           application: report.service,
           environment: report.environment,
-          severity: report.incidentAnalysis?.severity || report.anomalyDetection.severity || 'low',
+          severity: decision?.severity || report.incidentAnalysis?.severity || report.anomalyDetection.severity || 'low',
           status: report.status,
-          title: report.incidentAnalysis?.summary || report.anomalyDetection.reason || 'Incident',
-          summary: report.incidentAnalysis?.summary || report.anomalyDetection.reason || 'Incident',
+          title: decision?.reasoning || report.incidentAnalysis?.summary || report.anomalyDetection.reason || 'Incident',
+          summary: decision?.reasoning || report.incidentAnalysis?.summary || report.anomalyDetection.reason || 'Incident',
           description: input.rawLogs.substring(0, 5000), // Ensure we don't blow up if logs are huge, but they are stored
           rawLogs: input.rawLogs,
-          confidenceScore: report.incidentAnalysis?.confidence || report.anomalyDetection.confidence || 0,
-          rootCause: report.incidentAnalysis?.rootCause || 'Unknown',
-          aiReport: report.incidentAnalysis || null,
-          recommendations: report.incidentAnalysis?.suggestedActions ? { actions: report.incidentAnalysis.suggestedActions } : null,
+          confidenceScore: decision?.confidence || report.incidentAnalysis?.confidence || report.anomalyDetection.confidence || 0,
+          rootCause: report.rootCauseAnalysis?.rootCause || report.incidentAnalysis?.rootCause || 'Unknown',
+          aiReport: report || null,
+          recommendations,
           similarIncidents: report.similarIncidents || [],
           metadata: {
             context: input.context,
             anomalyDetection: report.anomalyDetection,
+            enkryptAiGovernance: report.enkryptAiGovernance,
           },
         });
       } catch (dbError) {
@@ -184,7 +193,7 @@ export class IncidentOrchestrator {
         incidentId,
         actor: 'SYSTEM_AI',
         action: TimelineEventType.AI_ANALYSIS_COMPLETED,
-        metadata: { confidence: report.incidentAnalysis?.confidence || report.anomalyDetection.confidence }
+        metadata: { confidence: report.decisionIntelligence?.decisionReport?.confidence || report.incidentAnalysis?.confidence || report.anomalyDetection.confidence }
       });
 
       // -------------------------------------------------------------------
@@ -196,9 +205,9 @@ export class IncidentOrchestrator {
         'Incident',
         {
           incidentId,
-          confidence: report.anomalyDetection.confidence,
+          confidence: report.decisionIntelligence?.decisionReport?.confidence || report.incidentAnalysis?.confidence || report.anomalyDetection.confidence,
           isAnomaly: report.anomalyDetection.isAnomaly,
-          rootCause: report.incidentAnalysis?.rootCause,
+          rootCause: report.rootCauseAnalysis?.rootCause || report.incidentAnalysis?.rootCause || 'Unknown',
         },
         { incidentId, traceId: `trc-${incidentId}` }
       );

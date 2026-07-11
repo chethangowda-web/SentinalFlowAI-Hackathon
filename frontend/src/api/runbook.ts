@@ -24,8 +24,10 @@ export interface RunbookExecution {
 
 export const runbookApi = {
   listRunbooks: async (): Promise<Runbook[]> => {
-    const res = await apiClient.get<Runbook[]>(endpoints.runbooks.list);
-    return res.data;
+    const res = await apiClient.get<Runbook[] | { success: boolean; data: Runbook[] }>(endpoints.runbooks.list);
+    // Backend returns raw array for this endpoint (inconsistent with rest of API)
+    if (Array.isArray(res.data)) return res.data;
+    return (res.data as { success: boolean; data: Runbook[] }).data;
   },
 
   executeRunbook: async (runbookId: string, incidentId: string): Promise<{ success: boolean; executionId: string }> => {

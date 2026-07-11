@@ -59,6 +59,12 @@ export const endpoints = {
     feedback:        '/custom/v1/learning/feedback',
     retrain:         '/custom/v1/learning/retrain',
     recommendations: '/custom/v1/learning/recommendations',
+    overview:        '/custom/v1/learning/overview',
+    similar:         '/custom/v1/learning/similar',
+    search:          '/custom/v1/learning/search',
+    growth:          '/custom/v1/learning/growth',
+    knowledge:       '/custom/v1/learning/knowledge',
+    embeddings:      '/custom/v1/learning/embeddings',
   },
   health: {
     live:         '/health',
@@ -70,5 +76,13 @@ export const endpoints = {
     trends:   '/custom/v1/dashboard/trends',
     severity: '/custom/v1/dashboard/severity',
     services: '/custom/v1/dashboard/services',
+  },
+  governance: {
+    overview:  '/custom/v1/governance/overview',
+    detectors: '/custom/v1/governance/detectors',
+    history:   '/custom/v1/governance/history',
+    approvals: '/custom/v1/governance/approvals',
+    audit:     '/custom/v1/governance/audit',
+    metrics:   '/custom/v1/governance/metrics',
   },
 } as const;

@@ -191,7 +191,6 @@ export async function seedDemoData(): Promise<void> {
       { agentId: randomUUID(), organizationId: orgId, name: 'Incident Analyzer', type: 'ANALYZER', status: 'RUNNING', config: JSON.stringify({ model: 'llama-3.1-70b-versatile', temperature: 0.1 }), lastHeartbeat: new Date().toISOString() },
       { agentId: randomUUID(), organizationId: orgId, name: 'Anomaly Detector', type: 'DETECTOR', status: 'RUNNING', config: JSON.stringify({ model: 'llama-3.1-8b-instant', threshold: 0.8 }), lastHeartbeat: new Date().toISOString() },
       { agentId: randomUUID(), organizationId: orgId, name: 'SRE Assistant', type: 'ASSISTANT', status: 'RUNNING', config: JSON.stringify({ model: 'llama-3.1-70b-versatile', tools: ['runbook_executor', 'k8s_client'] }), lastHeartbeat: new Date().toISOString() },
-      { agentId: randomUUID(), organizationId: orgId, name: 'Weather Agent', type: 'UTILITY', status: 'STOPPED', config: JSON.stringify({ api: 'openweather' }), lastHeartbeat: new Date(Date.now() - 3600000).toISOString() },
     ];
 
     for (const agent of agents) {

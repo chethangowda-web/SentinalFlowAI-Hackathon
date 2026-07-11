@@ -288,7 +288,7 @@ export const refreshRoute = registerApiRoute('/custom/v1/auth/refresh', {
         return c.json({ error: 'User not found' }, 401);
       }
 
-      const { accessToken, newRefreshToken } = await AuthService.refresh(token);
+      const { accessToken, newRefreshToken, session } = await AuthService.refresh(token);
       const formattedUser = await formatUserResponse(user);
 
       return c.json({
@@ -296,7 +296,8 @@ export const refreshRoute = registerApiRoute('/custom/v1/auth/refresh', {
         token: accessToken,
         accessToken,
         refreshToken: newRefreshToken,
-        user: formattedUser
+        user: formattedUser,
+        session
       }, 200);
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : 'Refresh failed' }, 401);

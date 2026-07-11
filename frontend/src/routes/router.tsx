@@ -24,6 +24,9 @@ const AuditPage = React.lazy(() => import('@/features/audit/pages/AuditPage'));
 const PlatformPage = React.lazy(() => import('@/features/platform/pages/PlatformPage'));
 const SettingsPage = React.lazy(() => import('@/features/settings/pages/SettingsPage'));
 
+const GovernancePage = React.lazy(() => import('@/pages/governance/GovernancePage'));
+const LearningPage = React.lazy(() => import('@/pages/learning/LearningPage'));
+
 const ForbiddenPage = React.lazy(() => import('@/components/feedback/ForbiddenPage'));
 const NotFoundPage = React.lazy(() => import('@/components/feedback/NotFoundPage'));
 const ErrorPage = React.lazy(() => import('@/components/feedback/ErrorPage'));
@@ -73,6 +76,8 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'incidents', element: <IncidentsPage /> },
       { path: 'intelligence', element: <IntelligencePage /> },
+      { path: 'governance', element: <GovernancePage /> },
+      { path: 'learning', element: <LearningPage /> },
       { path: 'runbooks', element: <RunbooksPage /> },
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'monitoring', element: <MonitoringPage /> },

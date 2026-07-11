@@ -29,6 +29,10 @@ export class PrometheusService {
     }
   }
 
+  public async runQuery(promql: string): Promise<any> {
+    return this.query(promql);
+  }
+
   public async getCpuMetrics(serviceName: string): Promise<any> {
     const query = `rate(container_cpu_usage_seconds_total{container="${serviceName}"}[5m])`;
     return this.query(query);

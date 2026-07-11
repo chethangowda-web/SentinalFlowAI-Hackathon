@@ -15,6 +15,10 @@ export interface DecisionReport {
   latencyMs?: number;
   tokensUsed?: number;
   reasoningSteps?: { step: string; thought: string; confidence: number; }[];
+  estimatedBusinessImpact?: string;
+  estimatedResolutionTime?: string;
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  approvalRecommendation?: 'AUTO_REMEDIATE' | 'MANUAL_REVIEW' | 'ROLLBACK';
 }
 
 export interface RunbookRecommendation {

@@ -25,6 +25,13 @@ const envSchema = z.object({
   GRAFANA_URL: z.string().optional(),
   GRAFANA_API_KEY: z.string().optional(),
   KUBERNETES_CONFIG_PATH: z.string().optional(),
+  LOKI_URL: z.string().optional(),
+  JAEGER_URL: z.string().optional(),
+
+  ENKRYPTAI_API_KEY: z.string().default('sk-placeholder'),
+  ENKRYPTAI_BASE_URL: z.string().default('https://api.enkryptai.com'),
+  ENKRYPTAI_GUARDRAIL_NAME: z.string().optional(),
+  ENKRYPTAI_TIMEOUT_MS: z.coerce.number().default(10000),
 
   JWT_SECRET: z.string().default('supersecret-change-me-in-production-1234567890'),
   JWT_ACCESS_EXPIRY: z.string().default('15m'),
@@ -97,6 +104,8 @@ export const config = {
     grafanaUrl: parsedEnv.GRAFANA_URL || 'http://grafana:3000',
     grafanaApiKey: parsedEnv.GRAFANA_API_KEY,
     k8sConfigPath: parsedEnv.KUBERNETES_CONFIG_PATH,
+    lokiUrl: parsedEnv.LOKI_URL || 'http://loki:3100',
+    jaegerUrl: parsedEnv.JAEGER_URL || 'http://jaeger:16686',
   },
   notifications: {
     smtp: {
@@ -126,5 +135,11 @@ export const config = {
     maxConnections: parsedEnv.WS_MAX_CONNECTIONS,
     maxPayload: parsedEnv.WS_MAX_PAYLOAD,
     rateLimit: parsedEnv.WS_RATE_LIMIT,
-  }
+  },
+  security: {
+    enkryptApiKey: parsedEnv.ENKRYPTAI_API_KEY,
+    enkryptBaseUrl: parsedEnv.ENKRYPTAI_BASE_URL,
+    enkryptGuardrailName: parsedEnv.ENKRYPTAI_GUARDRAIL_NAME,
+    enkryptTimeoutMs: parsedEnv.ENKRYPTAI_TIMEOUT_MS,
+  },
 } as const;

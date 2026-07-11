@@ -16,10 +16,26 @@ import { incidentApi } from '@/api/incident';
 import { runbookApi } from '@/api/runbook';
 import { apiClient } from '@/api/client';
 import { endpoints } from '@/api/endpoints';
+import {
+  LayoutDashboard,
+  AlertOctagon,
+  Sparkles,
+  Shield,
+  Bot,
+  BookOpen,
+  Bell,
+  Activity,
+  Settings,
+  Users,
+  Cpu,
+  Sun,
+  Moon,
+  LogOut,
+} from 'lucide-react';
 
 export function CommandPalette() {
-  const { commandPaletteOpen, setCommandPaletteOpen } = useUIStore();
-  const { user, switchOrganization } = useAuthStore();
+  const { commandPaletteOpen, setCommandPaletteOpen, theme, setTheme } = useUIStore();
+  const { user, switchOrganization, logout } = useAuthStore();
   const navigate = useNavigate();
   const [search, setSearch] = React.useState('');
 
@@ -94,55 +110,89 @@ export function CommandPalette() {
       />
       <CommandList className="text-xs">
         <CommandEmpty>No results found.</CommandEmpty>
-        
+
         <CommandGroup heading="Navigation">
-          <CommandItem onSelect={() => handleNavigate('/dashboard')}>Go to Dashboard</CommandItem>
-          <CommandItem onSelect={() => handleNavigate('/incidents')}>Go to Incidents</CommandItem>
-          <CommandItem onSelect={() => handleNavigate('/intelligence')}>Go to AI Intelligence</CommandItem>
-          <CommandItem onSelect={() => handleNavigate('/runbooks')}>Go to Runbooks</CommandItem>
-          <CommandItem onSelect={() => handleNavigate('/agents')}>Go to Agents</CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/dashboard')}>
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            Dashboard
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/incidents')}>
+            <AlertOctagon className="w-4 h-4 mr-2" />
+            Incidents
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/intelligence')}>
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Intelligence
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/governance')}>
+            <Shield className="w-4 h-4 mr-2" />
+            Enkrypt Governance
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/learning')}>
+            <Cpu className="w-4 h-4 mr-2" />
+            Learning Center
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/agents')}>
+            <Bot className="w-4 h-4 mr-2" />
+            Agents
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/runbooks')}>
+            <BookOpen className="w-4 h-4 mr-2" />
+            Runbooks
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/monitoring')}>
+            <Activity className="w-4 h-4 mr-2" />
+            Monitoring
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/notifications')}>
+            <Bell className="w-4 h-4 mr-2" />
+            Notifications
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('/settings')}>
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
         {filteredIncidents.length > 0 && (
-          <CommandGroup heading="Matching Incidents">
+          <CommandGroup heading="Incidents">
             {filteredIncidents.map(inc => (
               <CommandItem
                 key={inc.id}
                 onSelect={() => handleNavigate(`/incidents?id=${inc.id}`)}
               >
-                <span className="font-mono text-muted-foreground mr-2">{inc.id}</span>
+                <AlertOctagon className="w-3 h-3 mr-2 text-muted-foreground" />
+                <span className="font-mono text-muted-foreground mr-2 text-[10px]">{inc.id}</span>
                 {inc.title}
               </CommandItem>
             ))}
           </CommandGroup>
         )}
 
-        <CommandSeparator />
-
         {filteredRunbooks.length > 0 && (
-          <CommandGroup heading="Matching Runbooks">
+          <CommandGroup heading="Runbooks">
             {filteredRunbooks.map(rb => (
               <CommandItem
                 key={rb.id}
                 onSelect={() => handleNavigate('/runbooks')}
               >
+                <BookOpen className="w-3 h-3 mr-2 text-muted-foreground" />
                 {rb.name}
               </CommandItem>
             ))}
           </CommandGroup>
         )}
 
-        <CommandSeparator />
-
         {filteredAgents.length > 0 && (
-          <CommandGroup heading="Matching Agents">
+          <CommandGroup heading="Agents">
             {filteredAgents.map((ag: any) => (
               <CommandItem
                 key={ag.id}
                 onSelect={() => handleNavigate('/agents')}
               >
+                <Bot className="w-3 h-3 mr-2 text-muted-foreground" />
                 {ag.name}
               </CommandItem>
             ))}
@@ -151,20 +201,35 @@ export function CommandPalette() {
 
         <CommandSeparator />
 
+        <CommandGroup heading="Quick Actions">
+          <CommandItem onSelect={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setCommandPaletteOpen(false); }}>
+            {theme === 'dark' ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+            Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode
+          </CommandItem>
+          <CommandItem onSelect={() => { logout(); setCommandPaletteOpen(false); }}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </CommandItem>
+        </CommandGroup>
+
         {user && user.organizations.length > 0 && (
-          <CommandGroup heading="Switch Organization">
-            {user.organizations.map((org) => (
-              <CommandItem
-                key={org.id}
-                onSelect={() => {
-                  switchOrganization(org.id);
-                  setCommandPaletteOpen(false);
-                }}
-              >
-                Switch to {org.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Switch Organization">
+              {user.organizations.map((org) => (
+                <CommandItem
+                  key={org.id}
+                  onSelect={() => {
+                    switchOrganization(org.id);
+                    setCommandPaletteOpen(false);
+                  }}
+                >
+                  <Users className="w-3 h-3 mr-2 text-muted-foreground" />
+                  {org.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
         )}
       </CommandList>
     </CommandDialog>

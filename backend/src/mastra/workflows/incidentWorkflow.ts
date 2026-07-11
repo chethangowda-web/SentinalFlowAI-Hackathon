@@ -1,6 +1,6 @@
 import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
-import { incidentAnalysisSchema, incidentAnalyzer } from '../agents/incidentAnalyzer';
+import { incidentAnalysisSchema, incidentAnalyzer } from '../agents/incident/incidentAnalyzer';
 
 const AUTO_APPROVAL_THRESHOLD = 0.8;
 

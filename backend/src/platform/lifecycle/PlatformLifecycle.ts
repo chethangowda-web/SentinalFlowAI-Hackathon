@@ -2,6 +2,7 @@ console.log("========== PLATFORM LIFECYCLE LOADED ==========");
 import { dbClient } from '../../database/client/DatabaseClient';
 import { webSocketGateway } from '../../realtime/gateway/WebSocketGateway';
 import { LoggerService } from '../../mastra/services/loggerService';
+import { workerManager } from '../scheduler/Scheduler';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -106,6 +107,9 @@ export class PlatformLifecycle {
     if (this.isShutdown) return;
     this.isShutdown = true;
     this.log.warn(`[PlatformLifecycle] Shutdown initiated by signal ${signal}. Starting SRE teardown sequence...`);
+
+    // Stop workers
+    workerManager.stop();
 
     // Teardown WebSocket
     try {

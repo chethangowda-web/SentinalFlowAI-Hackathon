@@ -61,10 +61,30 @@ export class WebSocketGateway implements IWebSocketTransport {
     broadcastService.registerTransport(this);
   }
 
+  private started = false;
+
   public async start(): Promise<void> {
+    if (this.started) {
+      this.log.warn('WebSocket Gateway already started — skipping duplicate listen');
+      return;
+    }
+    if (this.server.listening) {
+      this.log.warn('WebSocket HTTP server already listening — skipping duplicate listen');
+      this.started = true;
+      return;
+    }
     const port = config.websocket.port;
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
+      this.server.once('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+          this.log.error(
+            `Port ${port} is already in use. Is another instance running? Close the other process or kill it with:  npx kill-port ${port}`
+          );
+        }
+        reject(err);
+      });
       this.server.listen(port, () => {
+        this.started = true;
         this.log.info(`WebSocket Server running on port ${port}`);
         this.startHeartbeatMonitor();
         resolve();

@@ -162,7 +162,7 @@ export class AuthService {
     return { accessToken, refreshToken: rawRefresh, user, session };
   }
 
-  public static async refresh(refreshToken: string): Promise<{ accessToken: string; newRefreshToken: string }> {
+  public static async refresh(refreshToken: string): Promise<{ accessToken: string; newRefreshToken: string; session: Session }> {
     const hash = createHash('sha256').update(refreshToken).digest('hex');
     const dbToken = await authRepository.getRefreshTokenByHash(hash);
 
@@ -181,6 +181,19 @@ export class AuthService {
     await authRepository.rotateRefreshToken(dbToken.id);
 
     const sessionId = randomUUID();
+    const session = await authRepository.createSession({
+      id: sessionId,
+      userId: user.userId,
+      device: null,
+      browser: null,
+      os: null,
+      ip: null,
+      lastSeen: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+
+    this.metrics.activeSessions++;
+
     const tokenPayload = {
       userId: user.userId,
       organizationId: user.organizationId || '',
@@ -201,7 +214,7 @@ export class AuthService {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
-    return { accessToken, newRefreshToken: newRawRefresh };
+    return { accessToken, newRefreshToken: newRawRefresh, session };
   }
 
   public static async logout(sessionId: string, userId: string): Promise<void> {

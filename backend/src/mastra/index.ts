@@ -3,13 +3,22 @@ import { PinoLogger } from '@mastra/loggers';
 import { LibSQLStore } from '@mastra/libsql';
 import { Observability, MastraStorageExporter, MastraPlatformExporter, SensitiveDataFilter } from '@mastra/observability';
 import { createGroq } from '@ai-sdk/groq';
-import { incidentAnalyzer } from './agents/incidentAnalyzer';
-import { anomalyDetector } from './agents/anomalyDetector';
-import { weatherAgent } from './agents/weather-agent';
-import { sreAssistant } from './agents/sreAssistant';
+import { incidentAnalyzer } from './agents/incident/incidentAnalyzer';
+import { anomalyDetector } from './agents/incident/anomalyDetector';
+import { sreAssistant } from './agents/incident/sreAssistant';
+import { rootCauseAnalyzer } from './agents/incident/rootCauseAnalyzer';
+import { postmortemGenerator } from './agents/incident/postmortemGenerator';
+import { decisionIntelligence } from './agents/incident/decisionIntelligence';
+import { runbookRecommender } from './agents/operations/runbookRecommender';
+import { kubernetesOperations } from './agents/operations/kubernetesOperations';
+import { infrastructureMonitoring } from './agents/operations/infrastructureMonitoring';
+import { alertCorrelation } from './agents/incident/alertCorrelation';
+import { securityCompliance } from './agents/security/securityCompliance';
+import { learningAgent } from './agents/learning/learningAgent';
+import { enkryptAiGovernance } from './agents/governance/enkryptAiGovernance';
+import { notificationAgent } from './agents/communication/notificationAgent';
 import { IncidentWorkflow } from './workflows/incidentWorkflow';
 import { IncidentPipelineWorkflow } from './workflows/incidentPipelineWorkflow';
-import { weatherWorkflow } from './workflows/weather-workflow';
 import { analyzeIncidentRoute } from '../routes/incidentRoutes';
 import {
   registerRoute,
@@ -112,6 +121,27 @@ import {
   learningRecommendationsRoute
 } from '../learning/routes/learningRoutes';
 import { learningEventSubscriber } from '../learning/events/LearningEventSubscriber';
+import {
+  listAgentsRoute,
+  getAgentMetricsRoute,
+  getAgentByIdRoute,
+  pauseAgentRoute,
+  resumeAgentRoute,
+  restartAgentRoute
+} from '../agents/routes/agentsRoutes';
+import {
+  governanceOverviewRoute,
+  governanceDetectorsRoute,
+  governanceHistoryRoute,
+  governanceApprovalsRoute,
+  governanceAuditRoute,
+  governanceMetricsRoute
+} from '../governance/routes/governanceRoutes';
+import {
+  learningOverviewRoute,
+  learningGrowthRoute,
+  learningSimilarRoute
+} from '../learning/routes/learningRoutes';
 import { qdrantMemory } from './services/qdrantMemory';
 import { demoService } from './services/DemoService';
 import { dbClient } from '../database/client/DatabaseClient';
@@ -154,6 +184,27 @@ try {
   console.error('[Mastra] Learning event subscriber registration failed:', err);
 }
 
+// Register agents in the agent registry for the API
+import { registerAgent } from '../agents/routes/agentsRoutes';
+
+const agentList = [
+  { id: 'incident-analyzer', name: 'Incident Analyzer', model: 'groq/llama-3.1-8b' },
+  { id: 'anomaly-detector', name: 'Anomaly Detector', model: 'groq/llama-3.1-8b' },
+  { id: 'sre-assistant', name: 'SRE Assistant', model: 'groq/llama-3.1-8b' },
+  { id: 'root-cause-analyzer', name: 'Root Cause Analyzer', model: 'groq/llama-3.1-8b' },
+  { id: 'postmortem-generator', name: 'Postmortem Generator', model: 'groq/llama-3.1-8b' },
+  { id: 'decision-intelligence', name: 'Decision Intelligence', model: 'groq/llama-3.1-8b' },
+  { id: 'runbook-recommender', name: 'Runbook Recommender', model: 'groq/llama-3.1-8b' },
+  { id: 'kubernetes-ops', name: 'Kubernetes Operations', model: 'k8s-api' },
+  { id: 'infra-monitoring', name: 'Infrastructure Monitoring', model: 'prometheus/grafana' },
+  { id: 'alert-correlation', name: 'Alert Correlation', model: 'groq/llama-3.1-8b' },
+  { id: 'security-compliance', name: 'Security Compliance', model: 'static-analysis' },
+  { id: 'learning-agent', name: 'Learning Agent', model: 'groq/llama-3.1-8b' },
+  { id: 'enkrypt-governance', name: 'Enkrypt Governance', model: 'governance-firewall' },
+  { id: 'notification-agent', name: 'Notification Agent', model: 'slack/teams/email' },
+];
+agentList.forEach(a => registerAgent(a.id, a.name, a.model));
+
 // Global Error Handling
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught Exception:', err);
@@ -164,34 +215,26 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Graceful Shutdown
-const shutdown = async (signal: string) => {
-  console.log(`\n[System] Received ${signal}. Initiating graceful shutdown...`);
-  
-  try {
-    // 1. Stop background jobs
-    // jobScheduler.stopAll(); (if implemented)
-    
-    // 2. Stop workers
-    workerManager.stop();
-    
-    // 3. Stop Realtime/WebSocket connections
-    // realtimeService.closeAll(); (if implemented)
-    
-    console.log('[System] Graceful shutdown completed.');
-    process.exit(0);
-  } catch (err) {
-    console.error('[System] Error during shutdown:', err);
-    process.exit(1);
-  }
-};
-
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+// Graceful shutdown is handled by PlatformLifecycle (SIGINT/SIGTERM)
+// which tears down WebSocket, workers, and DB connection pool.
 
 export const mastra = new Mastra({
-  workflows: { IncidentWorkflow, IncidentPipelineWorkflow, weatherWorkflow },
-  agents: { incidentAnalyzer, anomalyDetector, weatherAgent, sreAssistant },
+  workflows: { IncidentWorkflow, IncidentPipelineWorkflow },
+  agents: {
+    incidentAnalyzer,
+    anomalyDetector,
+    sreAssistant,
+    rootCauseAnalyzer,
+    postmortemGenerator,
+    decisionIntelligence,
+    runbookRecommender,
+    kubernetesOperations,
+    infrastructureMonitoring,
+    alertCorrelation,
+    securityCompliance,
+    learningAgent,
+      notificationAgent,
+  },
   server: {
     cors: {
       origin: '*',
@@ -277,6 +320,20 @@ export const mastra = new Mastra({
       platformStartupRoute,
       platformMetricsRoute,
       platformSwaggerRoute,
+      // Agents
+      listAgentsRoute,
+      getAgentMetricsRoute,
+      getAgentByIdRoute,
+      pauseAgentRoute,
+      resumeAgentRoute,
+      restartAgentRoute,
+      // Governance
+      governanceOverviewRoute,
+      governanceDetectorsRoute,
+      governanceHistoryRoute,
+      governanceApprovalsRoute,
+      governanceAuditRoute,
+      governanceMetricsRoute,
       // AI Learning & Continuous Improvement
       learningStatisticsRoute,
       learningHistoryRoute,
@@ -284,7 +341,10 @@ export const mastra = new Mastra({
       learningFeedbackRoute,
       learningRetrainRoute,
       learningReindexRoute,
-      learningRecommendationsRoute
+      learningRecommendationsRoute,
+      learningOverviewRoute,
+      learningGrowthRoute,
+      learningSimilarRoute
     ],
   },
   storage: new LibSQLStore({

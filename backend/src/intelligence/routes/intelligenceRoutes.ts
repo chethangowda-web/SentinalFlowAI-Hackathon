@@ -20,17 +20,54 @@ export const intelligenceDashboardRoute = registerApiRoute('/custom/v1/intellige
   },
 });
 
+function defaultDecisionReport(id: string) {
+  return {
+    id,
+    incidentId: id,
+    overallScore: 0,
+    confidence: 0.75,
+    riskLevel: 'LOW',
+    recommendedAction: 'No decision available',
+    recommendedRunbooks: [],
+    recommendedEngineer: null,
+    estimatedResolutionTime: null,
+    estimatedBusinessImpact: null,
+    similarIncidents: [],
+    possibleRootCauses: [],
+    reasoning: '',
+    evidence: {},
+    supportingMetrics: {},
+    supportingIncidents: [],
+    confidenceBreakdown: {},
+    explanation: '',
+    approvalRecommendation: 'MANUAL_APPROVAL',
+    status: 'PENDING',
+    outcome: null,
+    version: 1,
+    decisionModelVersion: '',
+    promptVersion: '',
+    embeddingVersion: '',
+    createdByModel: '',
+    modelLatencyMs: 0,
+    tokenUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+    executionTimeMs: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export const intelligenceDecisionRoute = registerApiRoute('/custom/v1/intelligence/decision/:id', {
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
-      const report = await decisionRepository.findById(id);
-      if (!report) {
-        return c.json({ success: false, error: `Decision report not found: ${id}` }, 404);
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return c.json({ success: true, data: defaultDecisionReport(id) }, 200);
       }
-      return c.json({ success: true, data: report }, 200);
+      const report = await decisionRepository.findByIncidentId(id);
+      return c.json({ success: true, data: report || defaultDecisionReport(id) }, 200);
     } catch (error: any) {
       return c.json({ success: false, error: error.message }, 500);
     }

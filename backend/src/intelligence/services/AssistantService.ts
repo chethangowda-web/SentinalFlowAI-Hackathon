@@ -1,4 +1,4 @@
-import { sreAssistant } from '../../mastra/agents/sreAssistant';
+import { sreAssistant } from '../../mastra/agents/incident/sreAssistant';
 import { incidentRepository } from '../../database/repositories/IncidentRepository';
 import { decisionRepository } from '../repositories/DecisionRepository';
 import { qdrantMemory } from '../../mastra/services/qdrantMemory';
