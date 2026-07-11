@@ -119,6 +119,55 @@ export class AuthRepository implements IAuthRepository, IOrganizationRepository,
   }
 
   // --- Organizations ---
+  public async createOrganizationWithUser(org: Organization, settings: OrganizationSettings, user: User): Promise<{ organization: Organization; user: User }> {
+    return this.db.transaction(async (client) => {
+      const orgText = `
+        INSERT INTO organizations (organization_id, name, slug, plan)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *;
+      `;
+      const orgRes = await client.query(orgText, [org.organizationId, org.name, org.slug, org.plan]);
+
+      const setVal = `
+        INSERT INTO organization_settings (
+          organization_id, timezone, business_hours, notification_defaults, retention_policy_days, default_severity, branding
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7);
+      `;
+      await client.query(setVal, [
+        org.organizationId,
+        settings.timezone,
+        JSON.stringify(settings.businessHours),
+        JSON.stringify(settings.notificationDefaults),
+        settings.retentionPolicyDays,
+        settings.defaultSeverity,
+        JSON.stringify(settings.branding),
+      ]);
+
+      const userText = `
+        INSERT INTO users (
+          user_id, organization_id, email, full_name, password_hash, role, status, mfa_enabled, mfa_secret, backup_codes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *;
+      `;
+      const userParams = [
+        user.userId,
+        org.organizationId,
+        user.email,
+        user.fullName,
+        user.passwordHash,
+        user.role,
+        user.status,
+        user.mfaEnabled,
+        user.mfaSecret || null,
+        JSON.stringify(user.backupCodes),
+      ];
+      const userRes = await client.query(userText, userParams);
+      if (!userRes.rows.length) throw new DatabaseError('Failed to create user');
+
+      return { organization: this.mapToOrg(orgRes.rows[0]), user: this.mapToUser(userRes.rows[0]) };
+    });
+  }
+
   public async createOrganization(org: Organization, settings: OrganizationSettings): Promise<Organization> {
     return this.db.transaction(async (client) => {
       const orgText = `

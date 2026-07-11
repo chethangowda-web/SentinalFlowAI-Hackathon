@@ -14,11 +14,18 @@ export class AuthService {
   private static loginDelays = new Map<string, number>();
 
   public static async register(email: string, fullName: string, password: string, orgName: string): Promise<{ user: User; organizationId: string }> {
-    const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const organizationId = randomUUID();
+    const passwordHash = await PasswordService.hash(password);
+    const userId = randomUUID();
 
-    // 1. Create Organization
-    await authRepository.createOrganization(
+    // Ensure unique slug by appending suffix if collision
+    const existing = await authRepository.getOrganizationBySlug(slug);
+    if (existing) {
+      slug = `${slug}-${userId.slice(0, 8)}`;
+    }
+
+    const { organization, user } = await authRepository.createOrganizationWithUser(
       {
         organizationId,
         name: orgName,
@@ -35,27 +42,23 @@ export class AuthService {
         retentionPolicyDays: 30,
         defaultSeverity: 'MEDIUM',
         branding: {},
+      },
+      {
+        userId,
+        organizationId,
+        email,
+        fullName,
+        passwordHash,
+        role: UserRole.OWNER,
+        status: 'ACTIVE',
+        mfaEnabled: false,
+        backupCodes: [],
+        loginAttempts: 0,
+        passwordHistory: [passwordHash],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
     );
-
-    // 2. Hash Password & Create Owner
-    const passwordHash = await PasswordService.hash(password);
-    const userId = randomUUID();
-    const user = await authRepository.createUser({
-      userId,
-      organizationId,
-      email,
-      fullName,
-      passwordHash,
-      role: UserRole.OWNER,
-      status: 'ACTIVE',
-      mfaEnabled: false,
-      backupCodes: [],
-      loginAttempts: 0,
-      passwordHistory: [passwordHash],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
 
     eventPublisher.publish('OrganizationCreated', organizationId, 'Organization', { organizationId, name: orgName, slug });
     eventPublisher.publish('UserCreated', userId, 'User', { userId, email, role: UserRole.OWNER });
