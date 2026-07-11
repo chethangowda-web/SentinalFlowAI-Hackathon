@@ -34,61 +34,7 @@ interface TrendAnalyticsProps {
   className?: string;
 }
 
-const defaultTrends: { day: string; count: number }[] = [
-  { day: 'Jun 12', count: 23 },
-  { day: 'Jun 13', count: 18 },
-  { day: 'Jun 14', count: 31 },
-  { day: 'Jun 15', count: 27 },
-  { day: 'Jun 16', count: 15 },
-  { day: 'Jun 17', count: 22 },
-  { day: 'Jun 18', count: 29 },
-  { day: 'Jun 19', count: 34 },
-  { day: 'Jun 20', count: 26 },
-  { day: 'Jun 21', count: 19 },
-  { day: 'Jun 22', count: 24 },
-  { day: 'Jun 23', count: 21 },
-  { day: 'Jun 24', count: 17 },
-  { day: 'Jun 25', count: 28 },
-  { day: 'Jun 26', count: 33 },
-  { day: 'Jun 27', count: 25 },
-  { day: 'Jun 28', count: 20 },
-  { day: 'Jun 29', count: 16 },
-  { day: 'Jun 30', count: 14 },
-  { day: 'Jul 01', count: 19 },
-  { day: 'Jul 02', count: 22 },
-  { day: 'Jul 03', count: 27 },
-  { day: 'Jul 04', count: 30 },
-  { day: 'Jul 05', count: 24 },
-  { day: 'Jul 06', count: 18 },
-  { day: 'Jul 07', count: 21 },
-  { day: 'Jul 08', count: 15 },
-  { day: 'Jul 09', count: 12 },
-  { day: 'Jul 10', count: 10 },
-  { day: 'Jul 11', count: 8 },
-];
-
-const mttrMockData = [
-  { day: 'Week 1', mttr: 4.2 },
-  { day: 'Week 2', mttr: 3.8 },
-  { day: 'Week 3', mttr: 4.5 },
-  { day: 'Week 4', mttr: 3.2 },
-  { day: 'Week 5', mttr: 2.9 },
-  { day: 'Week 6', mttr: 3.1 },
-];
-
-const rootCauseData = [
-  { name: 'Deployment', value: 45 },
-  { name: 'Config', value: 22 },
-  { name: 'Resource', value: 18 },
-  { name: 'Network', value: 10 },
-  { name: 'Other', value: 5 },
-];
-
 const rootCauseColors = ['#aa3bff', '#f59e0b', '#3b82f6', '#ef4444', '#6b7280'];
-
-const slaCompliance = 98.5;
-const automationSuccessRate = 98.2;
-const costSavings = 12450;
 
 const customTooltipStyle = {
   background: 'hsl(var(--card))',
@@ -162,9 +108,9 @@ export default function TrendAnalytics({
   aiConfidence,
   className,
 }: TrendAnalyticsProps) {
-  const resolvedTrends = useMemo(() => trends ?? defaultTrends, [trends]);
-  const resolvedMttr = useMemo(() => mttr ?? 3.2, [mttr]);
-  const resolvedAiConfidence = useMemo(() => aiConfidence ?? 94.7, [aiConfidence]);
+  const resolvedTrends = useMemo(() => trends ?? [], [trends]);
+  const resolvedMttr = useMemo(() => mttr ?? null, [mttr]);
+  const resolvedAiConfidence = useMemo(() => aiConfidence ?? null, [aiConfidence]);
 
   const chartTrends = useMemo(
     () =>
@@ -251,60 +197,31 @@ export default function TrendAnalytics({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mttrMockData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="mttrGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="day"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={axisTickStyle}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={axisTickStyle}
-                    width={32}
-                    domain={[0, 6]}
-                  />
-                  <RechartsTooltip
-                    contentStyle={customTooltipStyle}
-                    formatter={(value: any) => [`${value}h`, 'MTTR']}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="mttr"
-                    stroke="none"
-                    fill="url(#mttrGradient)"
-                    fillOpacity={1}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="mttr"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: '#f59e0b', stroke: 'hsl(var(--card))', strokeWidth: 2 }}
-                    activeDot={{ r: 5, fill: '#f59e0b', stroke: 'hsl(var(--card))', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground">Current MTTR:</span>
-                <span className="font-mono font-semibold text-foreground">{resolvedMttr}h</span>
+            {resolvedMttr ? (
+              <>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={[{ day: 'Current', mttr: resolvedMttr }]} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={axisTickStyle} />
+                      <YAxis axisLine={false} tickLine={false} tick={axisTickStyle} width={32} />
+                      <RechartsTooltip contentStyle={customTooltipStyle} formatter={(value: any) => [`${value.toFixed(1)}h`, 'MTTR']} />
+                      <Area type="monotone" dataKey="mttr" stroke="none" fill="url(#mttrGradient)" fillOpacity={1} />
+                      <Line type="monotone" dataKey="mttr" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} activeDot={{ r: 5, fill: '#f59e0b' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Current MTTR:</span>
+                    <span className="font-mono font-semibold text-foreground">{resolvedMttr.toFixed(1)}h</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-muted-foreground">
+                <p className="text-xs">No MTTR data available</p>
               </div>
-              <div className="flex items-center gap-1.5">
-                <TrendingDown className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-emerald-500 font-medium">-14%</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -323,9 +240,9 @@ export default function TrendAnalytics({
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center py-4">
-            <CircularProgress value={slaCompliance} label="Compliance" color="#22c55e" />
+            <CircularProgress value={100} label="Compliance" color="#22c55e" />
             <div className="mt-3 text-[11px] text-muted-foreground text-center">
-              <span className="text-emerald-500 font-semibold">+0.3%</span> vs last month
+              No SLA data yet
             </div>
           </CardContent>
         </Card>
@@ -345,30 +262,8 @@ export default function TrendAnalytics({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-36">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={rootCauseData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={axisTickStyle} hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={axisTickStyle} width={65} />
-                  <RechartsTooltip
-                    contentStyle={customTooltipStyle}
-                    formatter={(value: any) => [`${value}%`, 'Share']}
-                  />
-                  <Bar dataKey="value" radius={[0, 3, 3, 0]} barSize={14}>
-                    {rootCauseData.map((entry, index) => (
-                      <Cell key={entry.name} fill={rootCauseColors[index % rootCauseColors.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-2 justify-center">
-              {rootCauseData.map((entry, index) => (
-                <span key={entry.name} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rootCauseColors[index] }} />
-                  {entry.name} {entry.value}%
-                </span>
-              ))}
+            <div className="h-36 flex items-center justify-center text-muted-foreground">
+              <p className="text-xs">Root cause data will appear after incidents are analyzed</p>
             </div>
           </CardContent>
         </Card>
@@ -399,22 +294,14 @@ export default function TrendAnalytics({
                   stroke="#3b82f6"
                   strokeWidth="5"
                   strokeLinecap="round"
-                  strokeDasharray={`${(automationSuccessRate / 100) * 201} 201`}
+                  strokeDasharray={`${100 * 2.01} 201`}
                   className="transition-all duration-1000 ease-out"
                 />
               </svg>
-              <span className="absolute text-lg font-bold font-mono text-foreground">{automationSuccessRate}%</span>
+              <span className="absolute text-lg font-bold font-mono text-foreground">--%</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-emerald-500 font-medium">+0.8%</span>
-              <span>vs last month</span>
-            </div>
-            <div className="w-full max-w-[160px] h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-1000 ease-out"
-                style={{ width: `${automationSuccessRate}%` }}
-              />
+            <div className="text-[11px] text-muted-foreground">
+              No automation data yet
             </div>
           </CardContent>
         </Card>
@@ -435,22 +322,11 @@ export default function TrendAnalytics({
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center py-4">
             <div className="text-3xl font-bold font-mono tracking-tight text-foreground">
-              ${costSavings.toLocaleString()}
+              $0
             </div>
             <div className="text-[11px] text-muted-foreground mt-1">this month</div>
-            <div className="flex items-center gap-1.5 mt-3">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-emerald-500 font-semibold text-sm">+$2,340</span>
-              <span className="text-[11px] text-muted-foreground">vs last month</span>
-            </div>
-            <div className="mt-3 w-full max-w-[160px]">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>Last month</span>
-                <span>$10,110</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full bg-emerald-500 transition-all duration-1000 ease-out" style={{ width: '81%' }} />
-              </div>
+            <div className="text-[11px] text-muted-foreground mt-3">
+              Cost savings data will appear as automation runs
             </div>
           </CardContent>
         </Card>

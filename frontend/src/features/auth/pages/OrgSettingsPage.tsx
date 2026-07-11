@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { Building, Users, UserPlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { apiClient } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,30 +26,25 @@ interface Member {
 export function OrgSettingsPage() {
   const { activeOrg, user } = useAuth();
   
-  // Local state for mock members list
-  const [members, setMembers] = React.useState<Member[]>([
-    { id: 'm-1', name: 'Chethan Gowda', email: 'operator@sentinelflow.io', role: 'Owner', joinedAt: '2026-01-01' },
-    { id: 'm-2', name: 'Sarah Jenkins', email: 'sarah.j@sentinelflow.io', role: 'Admin', joinedAt: '2026-02-15' },
-    { id: 'm-3', name: 'Alex Rivera', email: 'alex.r@sentinelflow.io', role: 'Operator', joinedAt: '2026-03-10' },
-  ]);
+  const [members, setMembers] = React.useState<Member[]>([]);
+
+  React.useEffect(() => {
+    apiClient.get<{ data: Member[] }>('/custom/v1/auth/members')
+      .then(res => setMembers(res.data.data))
+      .catch(() => {});
+  }, []);
 
   const { register: registerInvite, handleSubmit: handleInviteSubmit, reset: resetInviteForm } = useForm<InviteMemberData>({
     defaultValues: { email: '', role: 'member' }
   });
 
   const onInvite = (data: InviteMemberData) => {
-    toast.success(`Invitation sent successfully to ${data.email} as ${data.role}`);
-    
-    // Add to members list for mock purposes
-    const newMember: Member = {
-      id: `m-${Date.now()}`,
-      name: data.email.split('@')[0],
-      email: data.email,
-      role: data.role.charAt(0).toUpperCase() + data.role.slice(1),
-      joinedAt: new Date().toISOString().split('T')[0]
-    };
-    setMembers((prev) => [...prev, newMember]);
-    resetInviteForm();
+    apiClient.post('/custom/v1/auth/invite', data)
+      .then(() => {
+        toast.success(`Invitation sent successfully to ${data.email} as ${data.role}`);
+        resetInviteForm();
+      })
+      .catch(() => toast.error('Failed to send invitation'));
   };
 
   const handleRemoveMember = (id: string) => {
@@ -57,8 +53,12 @@ export function OrgSettingsPage() {
       toast.error('You cannot remove yourself from the organization.');
       return;
     }
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    toast.success(`Member has been removed from organization.`);
+    apiClient.delete(`/custom/v1/auth/members/${id}`)
+      .then(() => {
+        setMembers((prev) => prev.filter((m) => m.id !== id));
+        toast.success(`Member has been removed from organization.`);
+      })
+      .catch(() => toast.error('Failed to remove member'));
   };
 
   return (

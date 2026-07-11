@@ -12,7 +12,7 @@ export interface RootCauseNode {
 }
 
 interface RootCauseTreeProps {
-  rootNode: RootCauseNode;
+  rootNode: RootCauseNode | null;
   className?: string;
 }
 
@@ -27,7 +27,13 @@ export function RootCauseTree({ rootNode, className }: RootCauseTreeProps) {
       </CardHeader>
       <CardContent>
         <div className="overflow-auto py-2">
-          <TreeNode node={rootNode} />
+          {rootNode ? (
+            <TreeNode node={rootNode} />
+          ) : (
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              <p className="text-xs">No root cause analysis available yet</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

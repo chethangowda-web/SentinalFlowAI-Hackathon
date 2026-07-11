@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiClient } from '@/api/client';
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -15,12 +16,9 @@ export function VerifyEmailPage() {
       return;
     }
 
-    // Mock verification delay
-    const timer = setTimeout(() => {
-      setStatus('success');
-    }, 1500);
-
-    return () => clearTimeout(timer);
+    apiClient.post('/custom/v1/auth/verify-email', { token })
+      .then(() => setStatus('success'))
+      .catch(() => setStatus('error'));
   }, [token]);
 
   return (

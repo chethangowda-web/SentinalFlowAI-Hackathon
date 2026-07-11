@@ -9,6 +9,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/api/client';
 
 interface AlertItem {
   id: string;
@@ -17,18 +19,20 @@ interface AlertItem {
   timestamp: string;
 }
 
-const MOCK_NOTIFICATIONS: AlertItem[] = [
-  { id: '1', message: 'CPU spike detected on production-service-pod-02', severity: 'CRITICAL', timestamp: '2 mins ago' },
-  { id: '2', message: 'Database backup finished successfully', severity: 'INFO', timestamp: '1 hour ago' },
-  { id: '3', message: 'Mastra agent latency warning threshold exceeded', severity: 'WARN', timestamp: '2 hours ago' },
-  { id: '4', message: 'Certificate expiry in 7 days for api.sentinelflow.ai', severity: 'WARN', timestamp: '3 hours ago' },
-  { id: '5', message: 'Deployment v2.4.1 rolled out to production', severity: 'INFO', timestamp: '5 hours ago' },
-];
-
 export function NotificationDrawer() {
   const { notificationDrawerOpen, setNotificationDrawerOpen } = useUIStore();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
+  const notifQuery = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const res = await apiClient.get<{ success: boolean; data: AlertItem[] }>('/custom/v1/notifications');
+      return res.data.data;
+    },
+    refetchInterval: 10000,
+  });
+
+  const MOCK_NOTIFICATIONS = notifQuery.data || [];
   const visibleAlerts = MOCK_NOTIFICATIONS.filter(n => !dismissed.has(n.id));
 
   const getAlertIcon = (sev: AlertItem['severity']) => {

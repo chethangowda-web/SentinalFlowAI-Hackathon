@@ -11,36 +11,7 @@ interface RootCauseExplorerProps {
 export function RootCauseExplorer({ possibleCauses }: RootCauseExplorerProps) {
   const [filterText, setFilterText] = React.useState('');
 
-  const mockRootNode: RootCauseNode = {
-    id: 'root',
-    label: 'Database pool starvation on auth-db-primary',
-    type: 'TRIGGER',
-    status: 'FAIL',
-    children: [
-      {
-        id: 'cause-1',
-        label: 'Active SQL query transaction blocking pools (92% lock rate)',
-        type: 'CAUSE',
-        status: 'FAIL',
-        children: [
-          {
-            id: 'subcause-1',
-            label: 'Deployment hash v2.4.1 (SQL Migration index missing on table user_sessions)',
-            type: 'CAUSE',
-            status: 'FAIL',
-          }
-        ]
-      },
-      {
-        id: 'cause-2',
-        label: 'Kubernetes Pod connection limit cap warning threshold reached (1000 conns)',
-        type: 'EFFECT',
-        status: 'WARN',
-      }
-    ]
-  };
-
-  const filteredCauses = possibleCauses.filter(cause =>
+  const filteredCauses = (possibleCauses || []).filter(cause =>
     cause.toLowerCase().includes(filterText.toLowerCase())
   );
 
@@ -50,7 +21,7 @@ export function RootCauseExplorer({ possibleCauses }: RootCauseExplorerProps) {
         <div className="flex justify-between items-center">
           <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono">RCA Pathway Node Map</span>
         </div>
-        <RootCauseTree rootNode={mockRootNode} />
+        <RootCauseTree rootNode={null} />
       </div>
 
       <div className="space-y-4">

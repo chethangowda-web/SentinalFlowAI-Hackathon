@@ -29,8 +29,8 @@ export function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'operator@sentinelflow.io',
-      password: 'password123',
+      email: '',
+      password: '',
       rememberMe: false,
     },
   });
@@ -78,7 +78,7 @@ export function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="operator@sentinelflow.io"
+                  placeholder="you@company.com"
                   {...register('email')}
                   className="bg-background text-xs h-10 border-border/40 rounded-xl focus:border-primary/30"
                 />

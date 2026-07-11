@@ -28,7 +28,10 @@ const envSchema = z.object({
   LOKI_URL: z.string().optional(),
   JAEGER_URL: z.string().optional(),
 
-  ENKRYPTAI_API_KEY: z.string().default('sk-placeholder'),
+  ENKRYPTAI_API_KEY: z.string().default('sk-placeholder').refine(
+    (val) => process.env.NODE_ENV !== 'production' || val !== 'sk-placeholder',
+    { message: 'ENKRYPTAI_API_KEY must be set in production' }
+  ),
   ENKRYPTAI_BASE_URL: z.string().default('https://api.enkryptai.com'),
   ENKRYPTAI_GUARDRAIL_NAME: z.string().optional(),
   ENKRYPTAI_TIMEOUT_MS: z.coerce.number().default(10000),

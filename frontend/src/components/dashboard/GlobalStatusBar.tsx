@@ -13,6 +13,8 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useRealtimeStore } from '@/store/realtimeStore';
 import { useDashboardStore } from '@/features/dashboard/store/dashboardStore';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/api/client';
 
 function useTick() {
   const [tick, setTick] = React.useState(0);
@@ -50,6 +52,18 @@ export function GlobalStatusBar() {
   const realtimeStatus = useRealtimeStore((s) => s.status);
   const lastUpdated = useDashboardStore((s) => s.lastUpdated);
   const tick = useTick();
+
+  const topoQuery = useQuery({
+    queryKey: ['global-status'],
+    queryFn: async () => {
+      const res = await apiClient.get<{ success: boolean; data: { platform: string; services: number; agents: number; latency: number; qdrant: string; enkrypt: string } }>('/health/status');
+      return res.data.data;
+    },
+    refetchInterval: 15000,
+  });
+
+  const topo = topoQuery.data;
+
   const lastSyncSeconds = React.useMemo(() => {
     const val = lastUpdated['realtime'];
     if (!val) return 3;
@@ -59,13 +73,15 @@ export function GlobalStatusBar() {
     return Math.max(0, diff);
   }, [lastUpdated, tick]);
 
-  const latencyValue = 45;
+  const latencyValue = topo?.latency ?? 0;
   const latencyColor =
-    latencyValue < 50
-      ? 'text-emerald-400'
-      : latencyValue < 150
-        ? 'text-amber-400'
-        : 'text-red-400';
+    latencyValue === 0
+      ? 'text-muted-foreground'
+      : latencyValue < 50
+        ? 'text-emerald-400'
+        : latencyValue < 150
+          ? 'text-amber-400'
+          : 'text-red-400';
 
   return (
     <Card
@@ -97,7 +113,7 @@ export function GlobalStatusBar() {
         <div className="flex items-center gap-3 px-3 shrink-0">
           <Cloud className="w-3.5 h-3.5 text-muted-foreground/80" />
           <span className="text-[11px] font-medium text-muted-foreground">
-            AWS EKS
+            {topo?.platform || 'Unknown'}
           </span>
         </div>
 
@@ -106,7 +122,7 @@ export function GlobalStatusBar() {
         <div className="flex items-center gap-2 px-3 shrink-0">
           <Boxes className="w-3.5 h-3.5 text-muted-foreground/80" />
           <span className="text-[11px] font-medium text-muted-foreground">
-            23 Services
+            {topo?.services ?? 0} Services
           </span>
         </div>
 
@@ -114,13 +130,9 @@ export function GlobalStatusBar() {
 
         <div className="flex items-center gap-2 px-3 shrink-0">
           <Bot className="w-3.5 h-3.5 text-cyan-400/80" />
-          <motion.span
-            className="text-[11px] font-medium text-muted-foreground"
-            animate={{ opacity: [1, 0.6, 1] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            6 AI Agents Running
-          </motion.span>
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {topo?.agents ?? 0} AI Agents
+          </span>
         </div>
 
         <div className="w-px h-5 bg-border/60" />
@@ -128,7 +140,7 @@ export function GlobalStatusBar() {
         <div className="flex items-center gap-2 px-3 shrink-0">
           <Gauge className={cn('w-3.5 h-3.5', latencyColor)} />
           <span className={cn('text-[11px] font-medium', latencyColor)}>
-            Latency {latencyValue}ms
+            {latencyValue > 0 ? `Latency ${latencyValue}ms` : 'Latency N/A'}
           </span>
         </div>
 
@@ -137,22 +149,17 @@ export function GlobalStatusBar() {
         <div className="flex items-center gap-2 px-3 shrink-0">
           <Database className="w-3.5 h-3.5 text-muted-foreground/80" />
           <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            Qdrant Healthy
+            <span className={cn('w-1.5 h-1.5 rounded-full', topo?.qdrant === 'healthy' ? 'bg-emerald-400' : 'bg-red-400')} />
+            {topo?.qdrant === 'healthy' ? 'Qdrant Healthy' : topo?.qdrant || 'Qdrant N/A'}
           </span>
         </div>
 
         <div className="w-px h-5 bg-border/60" />
 
         <div className="flex items-center gap-2 px-3 shrink-0">
-          <motion.div
-            animate={{ scale: [1, 1.15, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400/80" />
-          </motion.div>
+          <ShieldCheck className="w-3.5 h-3.5 text-indigo-400/80" />
           <span className="text-[11px] font-medium text-indigo-300/80">
-            Enkrypt Protected
+            {topo?.enkrypt === 'active' ? 'Enkrypt Protected' : topo?.enkrypt || 'Enkrypt N/A'}
           </span>
         </div>
 

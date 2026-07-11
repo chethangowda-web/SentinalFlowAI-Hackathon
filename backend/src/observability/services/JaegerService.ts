@@ -43,26 +43,7 @@ export class JaegerService {
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
       this.log.error(`Jaeger traces fetch error [${serviceName}]: ${msg}`);
-      // Fallback: mock distributed traces if Jaeger connection is down
-      return [
-        {
-          traceID: `trc-${serviceName}-mock-1`,
-          spans: [
-            {
-              traceID: `trc-${serviceName}-mock-1`,
-              spanID: 'spn-1',
-              operationName: 'HTTP GET /api/v1/user',
-              startTime: Date.now() * 1000 - 5000000,
-              duration: 3500000, // 3.5 seconds
-              tags: [
-                { key: 'http.status_code', value: 504 },
-                { key: 'error', value: true },
-                { key: 'db.type', value: 'postgres' }
-              ]
-            }
-          ]
-        }
-      ];
+      return [];
     }
   }
 

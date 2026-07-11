@@ -13,6 +13,8 @@ import { motion } from 'framer-motion';
 import { User, Shield, Server, Brain, Bot, Database, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/api/client';
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
   User, Shield, Server, Brain, Bot, Database, Bell,
@@ -24,15 +26,15 @@ const statusColors: Record<string, string> = {
   ERROR: 'bg-red-500',
 };
 
-const initialNodes: any[] = [
-  { id: 'user', type: 'custom', position: { x: 250, y: 0 }, data: { label: 'User', icon: 'User', status: 'OK' } },
-  { id: 'api', type: 'custom', position: { x: 250, y: 120 }, data: { label: 'API Gateway', icon: 'Shield', status: 'OK' } },
-  { id: 'backend', type: 'custom', position: { x: 250, y: 240 }, data: { label: 'Backend', icon: 'Server', status: 'OK' } },
-  { id: 'mastra', type: 'custom', position: { x: 250, y: 360 }, data: { label: 'Mastra AI', icon: 'Brain', status: 'OK' } },
-  { id: 'agents', type: 'custom', position: { x: 100, y: 480 }, data: { label: 'AI Agents', icon: 'Bot', status: 'OK' } },
-  { id: 'qdrant', type: 'custom', position: { x: 400, y: 480 }, data: { label: 'Qdrant', icon: 'Database', status: 'OK' } },
-  { id: 'postgres', type: 'custom', position: { x: 100, y: 600 }, data: { label: 'PostgreSQL', icon: 'Database', status: 'OK' } },
-  { id: 'notifications', type: 'custom', position: { x: 400, y: 600 }, data: { label: 'Notifications', icon: 'Bell', status: 'OK' } },
+const topologyNodes: any[] = [
+  { id: 'user', type: 'custom', position: { x: 250, y: 0 }, data: { label: 'User', icon: 'User', statusKey: 'user' } },
+  { id: 'api', type: 'custom', position: { x: 250, y: 120 }, data: { label: 'API Gateway', icon: 'Shield', statusKey: 'api' } },
+  { id: 'backend', type: 'custom', position: { x: 250, y: 240 }, data: { label: 'Backend', icon: 'Server', statusKey: 'backend' } },
+  { id: 'mastra', type: 'custom', position: { x: 250, y: 360 }, data: { label: 'Mastra AI', icon: 'Brain', statusKey: 'mastra' } },
+  { id: 'agents', type: 'custom', position: { x: 100, y: 480 }, data: { label: 'AI Agents', icon: 'Bot', statusKey: 'agents' } },
+  { id: 'qdrant', type: 'custom', position: { x: 400, y: 480 }, data: { label: 'Qdrant', icon: 'Database', statusKey: 'qdrant' } },
+  { id: 'postgres', type: 'custom', position: { x: 100, y: 600 }, data: { label: 'PostgreSQL', icon: 'Database', statusKey: 'postgres' } },
+  { id: 'notifications', type: 'custom', position: { x: 400, y: 600 }, data: { label: 'Notifications', icon: 'Bell', statusKey: 'notifications' } },
 ];
 
 const initialEdges: any[] = [
@@ -76,7 +78,25 @@ interface SystemTopologyProps {
 }
 
 export function SystemTopology({ className }: SystemTopologyProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const healthQuery = useQuery({
+    queryKey: ['health', 'topology'],
+    queryFn: async () => {
+      const res = await apiClient.get<{ success: boolean; data: Record<string, string> }>('/health/topology');
+      return res.data.data || {};
+    },
+    refetchInterval: 30000,
+  });
+
+  const healthMap = healthQuery.data || {};
+  const nodesWithStatus = React.useMemo(() =>
+    topologyNodes.map(n => ({
+      ...n,
+      data: { ...n.data, status: healthMap[n.data.statusKey] || 'OK' },
+    })),
+    [healthMap],
+  );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(nodesWithStatus);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onInit = useCallback((instance: any) => {

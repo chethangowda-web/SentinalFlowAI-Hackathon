@@ -127,36 +127,36 @@ export const learningOverviewRoute = registerApiRoute('/custom/v1/learning/overv
         FROM incident_root_causes
         GROUP BY cause ORDER BY count DESC LIMIT 5
       `);
+      const errorRows = await dbClient.query<any[]>(`
+        SELECT error_message as error, COUNT(*) as count
+        FROM incidents WHERE error_message IS NOT NULL
+        GROUP BY error_message ORDER BY count DESC LIMIT 5
+      `);
+      const runbookRows = await dbClient.query<any[]>(`
+        SELECT runbook_name as name, COUNT(*) as count
+        FROM runbook_executions WHERE status = 'COMPLETED'
+        GROUP BY runbook_name ORDER BY count DESC LIMIT 5
+      `);
       return c.json({
         success: true,
         data: {
-          totalIncidentsLearned: stats?.totalIncidentsLearned ?? 1247,
-          embeddingsGenerated: stats?.embeddingsGenerated ?? 45890,
-          knowledgeBaseSize: stats?.knowledgeBaseSize ?? 328,
-          similarityAccuracy: stats?.similarityAccuracy ?? 94,
-          learningGrowth: stats?.learningGrowth ?? 23,
+          totalIncidentsLearned: stats?.totalSessions ?? 0,
+          embeddingsGenerated: stats?.totalKnowledgeUpdates ?? 0,
+          knowledgeBaseSize: stats?.activePromptVersions ?? 0,
+          similarityAccuracy: stats?.avgRecommendationAccuracy ?? 0,
+          learningGrowth: stats?.totalFeedbackSignals ?? 0,
           topRootCauses: rows ?? [],
-          frequentErrors: [
-            { error: 'ETIMEDOUT', count: 234 },
-            { error: 'ECONNRESET', count: 156 },
-            { error: 'EADDRINUSE', count: 78 },
-            { error: 'ENOTFOUND', count: 45 },
-          ],
-          successfulRunbooks: [
-            { name: 'DB Connection Recovery', count: 156 },
-            { name: 'Cache Warmup Procedure', count: 98 },
-            { name: 'Load Balancer Drain', count: 76 },
-            { name: 'Certificate Renewal', count: 54 },
-          ],
+          frequentErrors: errorRows ?? [],
+          successfulRunbooks: runbookRows ?? [],
         },
       }, 200);
     } catch (error: any) {
       return c.json({ success: true, data: {
-        totalIncidentsLearned: 1247,
-        embeddingsGenerated: 45890,
-        knowledgeBaseSize: 328,
-        similarityAccuracy: 94,
-        learningGrowth: 23,
+        totalIncidentsLearned: 0,
+        embeddingsGenerated: 0,
+        knowledgeBaseSize: 0,
+        similarityAccuracy: 0,
+        learningGrowth: 0,
         topRootCauses: [],
         frequentErrors: [],
         successfulRunbooks: [],
@@ -170,12 +170,25 @@ export const learningGrowthRoute = registerApiRoute('/custom/v1/learning/growth'
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    const data = Array.from({ length: 6 }, (_, i) => ({
-      date: `Week ${i + 1}`,
-      embeddings: 5200 + i * 3200 + Math.round(Math.random() * 500),
-      incidents: 45 + i * 16 + Math.round(Math.random() * 10),
-    }));
-    return c.json({ success: true, data }, 200);
+    try {
+      const rows = await dbClient.query<any[]>(`
+        SELECT DATE_TRUNC('week', created_at) as date,
+               COUNT(*) as incidents,
+               COALESCE(SUM(knowledge_updates), 0) as embeddings
+        FROM learning_sessions
+        WHERE created_at >= NOW() - INTERVAL '6 weeks'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY date ASC
+      `);
+      const data = (rows ?? []).map((r: any) => ({
+        date: r.date ? new Date(r.date).toISOString().split('T')[0] : 'N/A',
+        embeddings: parseInt(r.embeddings || '0', 10),
+        incidents: parseInt(r.incidents || '0', 10),
+      }));
+      return c.json({ success: true, data }, 200);
+    } catch {
+      return c.json({ success: true, data: [] }, 200);
+    }
   }
 });
 
@@ -198,9 +211,9 @@ export const learningSimilarRoute = registerApiRoute('/custom/v1/learning/simila
       id: r.id,
       title: r.title,
       severity: r.severity,
-      similarity: 85 + Math.round(Math.random() * 14),
+      similarity: 0,
       resolvedAt: r.resolved_at,
-      runbookUsed: 'Standard Recovery',
+      runbookUsed: r.runbook_used || 'N/A',
     }));
     return c.json({ success: true, data }, 200);
   }

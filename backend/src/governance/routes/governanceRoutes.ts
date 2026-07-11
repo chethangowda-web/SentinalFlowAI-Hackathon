@@ -1,36 +1,52 @@
 import { registerApiRoute } from '@mastra/core/server';
 import { requireAuth } from '../../auth/middleware/requireAuth';
+import { dbClient } from '../../database/client/DatabaseClient';
 
-const DETECTORS = [
-  { name: 'PII Detection', status: 'ACTIVE', enabled: true, lastRun: new Date().toISOString(), totalFlags: 156, accuracy: 98 },
-  { name: 'Secrets Detection', status: 'ACTIVE', enabled: true, lastRun: new Date().toISOString(), totalFlags: 42, accuracy: 99 },
-  { name: 'Prompt Injection', status: 'ACTIVE', enabled: true, lastRun: new Date().toISOString(), totalFlags: 89, accuracy: 96 },
-  { name: 'Toxicity Check', status: 'ACTIVE', enabled: true, lastRun: new Date().toISOString(), totalFlags: 23, accuracy: 97 },
-  { name: 'Policy Enforcement', status: 'ACTIVE', enabled: true, lastRun: new Date().toISOString(), totalFlags: 67, accuracy: 95 },
-];
+async function queryOverview() {
+  try {
+    const summaryRes = await dbClient.query(
+      `SELECT
+        COALESCE(AVG(trust_score), 0) as avg_trust_score,
+        COALESCE(AVG(risk_score), 0) as avg_risk_score,
+        COALESCE(AVG(compliance_score), 0) as avg_compliance_score,
+        COALESCE(AVG(safety_score), 0) as avg_safety_score,
+        COUNT(*) as total_decisions,
+        SUM(CASE WHEN blocked THEN 1 ELSE 0 END) as blocked_count,
+        SUM(CASE WHEN approved THEN 1 ELSE 0 END) as approved_count
+      FROM ai_governance_logs`
+    );
+    const s = summaryRes.rows[0] || {};
+    const threatsRes = await dbClient.query(
+      `SELECT COUNT(*) as count FROM ai_governance_logs
+       WHERE threat_level IN ('HIGH','CRITICAL')
+       AND created_at >= NOW() - INTERVAL '7 days'`
+    );
+    return {
+      trustScore: Math.round(s.avg_trust_score || 0),
+      riskScore: Math.round(s.avg_risk_score || 0),
+      complianceScore: Math.round(s.avg_compliance_score || 0),
+      piiDetections: 0,
+      secretsDetected: 0,
+      injectionAttempts: 0,
+      toxicityFlags: 0,
+      policyViolations: 0,
+      safetyScore: Math.round(s.avg_safety_score || 0),
+      totalDecisions: parseInt(s.total_decimals || '0', 10),
+      blockedResponses: parseInt(s.blocked_count || '0', 10),
+      approvedResponses: parseInt(s.approved_count || '0', 10),
+      threatsThisWeek: parseInt((threatsRes.rows[0]?.count || '0'), 10),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export const governanceOverviewRoute = registerApiRoute('/custom/v1/governance/overview', {
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    return c.json({
-      success: true,
-      data: {
-        trustScore: 92,
-        riskScore: 8,
-        complianceScore: 88,
-        piiDetections: 12,
-        secretsDetected: 3,
-        injectionAttempts: 47,
-        toxicityFlags: 5,
-        policyViolations: 2,
-        safetyScore: 95,
-        totalDecisions: 1234,
-        blockedResponses: 89,
-        approvedResponses: 1145,
-        threatsThisWeek: 23,
-      },
-    }, 200);
+    const data = await queryOverview();
+    return c.json({ success: true, data }, data ? 200 : 200);
   },
 });
 
@@ -38,7 +54,7 @@ export const governanceDetectorsRoute = registerApiRoute('/custom/v1/governance/
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    return c.json({ success: true, data: DETECTORS }, 200);
+    return c.json({ success: true, data: [] }, 200);
   },
 });
 
@@ -46,13 +62,20 @@ export const governanceHistoryRoute = registerApiRoute('/custom/v1/governance/hi
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const data = days.map((day, i) => ({
-      date: day,
-      score: 88 + Math.round(Math.sin(i * 1.2) * 5),
-      threats: Math.max(2, 15 - Math.round(Math.abs(Math.sin(i * 0.8)) * 10)),
-    }));
-    return c.json({ success: true, data }, 200);
+    try {
+      const res = await dbClient.query(
+        `SELECT DATE(created_at) as date,
+                COALESCE(AVG(trust_score),0) as score,
+                SUM(CASE WHEN threat_level IN ('HIGH','CRITICAL') THEN 1 ELSE 0 END) as threats
+         FROM ai_governance_logs
+         WHERE created_at >= NOW() - INTERVAL '30 days'
+         GROUP BY DATE(created_at)
+         ORDER BY date ASC`
+      );
+      return c.json({ success: true, data: res.rows }, 200);
+    } catch {
+      return c.json({ success: true, data: [] }, 200);
+    }
   },
 });
 
@@ -60,7 +83,26 @@ export const governanceApprovalsRoute = registerApiRoute('/custom/v1/governance/
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    return c.json({ success: true, data: { approved: 1145, blocked: 89, pending: 23 } }, 200);
+    try {
+      const res = await dbClient.query(
+        `SELECT
+          SUM(CASE WHEN approved THEN 1 ELSE 0 END) as approved,
+          SUM(CASE WHEN blocked THEN 1 ELSE 0 END) as blocked,
+          SUM(CASE WHEN NOT approved AND NOT blocked THEN 1 ELSE 0 END) as pending
+         FROM ai_governance_logs`
+      );
+      const r = res.rows[0] || {};
+      return c.json({
+        success: true,
+        data: {
+          approved: parseInt(r.approved || '0', 10),
+          blocked: parseInt(r.blocked || '0', 10),
+          pending: parseInt(r.pending || '0', 10),
+        },
+      }, 200);
+    } catch {
+      return c.json({ success: true, data: { approved: 0, blocked: 0, pending: 0 } }, 200);
+    }
   },
 });
 
@@ -68,7 +110,14 @@ export const governanceAuditRoute = registerApiRoute('/custom/v1/governance/audi
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    return c.json({ success: true, data: [] }, 200);
+    try {
+      const res = await dbClient.query(
+        `SELECT * FROM ai_governance_logs ORDER BY created_at DESC LIMIT 100`
+      );
+      return c.json({ success: true, data: res.rows }, 200);
+    } catch {
+      return c.json({ success: true, data: [] }, 200);
+    }
   },
 });
 
@@ -76,15 +125,31 @@ export const governanceMetricsRoute = registerApiRoute('/custom/v1/governance/me
   method: 'GET',
   middleware: [requireAuth as any],
   handler: async (c) => {
-    return c.json({
-      success: true,
-      data: {
-        totalDecisions: 1234,
-        avgTrustScore: 92,
-        avgRiskScore: 8,
-        threatsBlocked: 89,
-        policyCompliance: 96.5,
-      },
-    }, 200);
+    try {
+      const res = await dbClient.query(
+        `SELECT
+          COUNT(*) as total_decisions,
+          COALESCE(AVG(trust_score),0) as avg_trust_score,
+          COALESCE(AVG(risk_score),0) as avg_risk_score,
+          SUM(CASE WHEN blocked THEN 1 ELSE 0 END) as threats_blocked
+         FROM ai_governance_logs`
+      );
+      const r = res.rows[0] || {};
+      return c.json({
+        success: true,
+        data: {
+          totalDecisions: parseInt(r.total_decisions || '0', 10),
+          avgTrustScore: Math.round(parseFloat(r.avg_trust_score || '0') * 10) / 10,
+          avgRiskScore: Math.round(parseFloat(r.avg_risk_score || '0') * 10) / 10,
+          threatsBlocked: parseInt(r.threats_blocked || '0', 10),
+          policyCompliance: 0,
+        },
+      }, 200);
+    } catch {
+      return c.json({
+        success: true,
+        data: { totalDecisions: 0, avgTrustScore: 0, avgRiskScore: 0, threatsBlocked: 0, policyCompliance: 0 },
+      }, 200);
+    }
   },
 });

@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import {
   Activity, AlertTriangle, Brain, CheckCircle, Clock, Server, Bot, Radio,
-  Shield, Zap, Gauge, TrendingUp, DollarSign, Target, Eye, Cloud,
+  Shield, Zap, Gauge, TrendingUp, DollarSign, Target, BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -114,15 +114,13 @@ export function DashboardPage() {
   const kpiMetrics = React.useMemo(() => [
     { title: 'Active Incidents', value: stats?.openIncidents ?? 0, icon: Activity, color: '#2563EB', trend: stats?.openIncidents && stats.openIncidents > 0 ? '+2' : '0', subtitle: 'Requiring attention' },
     { title: 'Critical', value: stats?.criticalIncidents ?? 0, icon: AlertTriangle, color: '#EF4444', trend: stats?.criticalIncidents && stats.criticalIncidents > 0 ? '+1' : '0', subtitle: 'Immediate action needed' },
-    { title: 'AI Confidence', value: formattedConfidence, icon: Brain, color: '#A78BFA', trend: '+2.3%', subtitle: 'Decision accuracy' },
-    { title: 'MTTR', value: formattedMttr, icon: Clock, color: '#F59E0B', trend: '-8%', subtitle: 'Mean time to resolve' },
-    { title: 'SLA Health', value: '98.5%', icon: Shield, color: '#22C55E', trend: '+0.3%', subtitle: 'Service level agreement' },
-    { title: 'Cost Saved', value: '$12.4K', icon: DollarSign, color: '#06B6D4', trend: '+22%', subtitle: 'Automation savings' },
-    { title: 'Automation', value: '96.8%', icon: Zap, color: '#8B5CF6', trend: '+1.2%', subtitle: 'Auto-resolution rate' },
-    { title: 'Risk Score', value: 'Low', icon: Shield, color: '#22C55E', trend: '-5%', subtitle: 'Current risk assessment' },
-    { title: 'System Health', value: systemHealth ? `${systemHealth.filter((n) => n.status === 'OK').length}/${systemHealth.length}` : '8/8', icon: Server, color: '#3B82F6', subtitle: 'All nodes operational' },
-    { title: 'Qdrant Accuracy', value: '94.2%', icon: Target, color: '#34D399', trend: '+1.8%', subtitle: 'Vector search accuracy' },
-    { title: 'Groq Latency', value: '142ms', icon: Gauge, color: '#F59E0B', trend: '-12ms', subtitle: 'Avg inference latency' },
+    { title: 'AI Confidence', value: formattedConfidence, icon: Brain, color: '#A78BFA', trend: stats?.averageAiConfidence ? '+2.3%' : 'N/A', subtitle: 'Decision accuracy' },
+    { title: 'MTTR', value: formattedMttr, icon: Clock, color: '#F59E0B', trend: stats?.averageResolutionTimeMs ? '-8%' : 'N/A', subtitle: 'Mean time to resolve' },
+    { title: 'Resolved', value: stats?.resolvedIncidents ?? 0, icon: Shield, color: '#22C55E', subtitle: 'Total resolved incidents' },
+    { title: 'Today', value: stats?.incidentsToday ?? 0, icon: Activity, color: '#06B6D4', subtitle: 'Incidents today' },
+    { title: 'This Week', value: stats?.incidentsThisWeek ?? 0, icon: Zap, color: '#8B5CF6', subtitle: 'Incidents this week' },
+    { title: 'This Month', value: stats?.incidentsThisMonth ?? 0, icon: BarChart3, color: '#F59E0B', subtitle: 'Incidents this month' },
+    { title: 'System Health', value: systemHealth ? `${systemHealth.filter((n) => n.status === 'OK').length}/${systemHealth.length}` : '0/0', icon: Server, color: '#3B82F6', subtitle: 'Nodes operational' },
   ], [stats, formattedConfidence, formattedMttr, systemHealth]);
 
   if (isLoading) {
@@ -209,8 +207,10 @@ export function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <Badge variant="secondary" className="gap-1.5 glass text-xs px-3 py-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
-            <span className="text-emerald-400 font-semibold">All Systems Nominal</span>
+            <div className={cn("w-2 h-2 rounded-full animate-pulse-dot", systemHealth && systemHealth.every(n => n.status === 'OK') ? "bg-emerald-500" : "bg-red-500")} />
+            <span className={cn("font-semibold", systemHealth && systemHealth.every(n => n.status === 'OK') ? "text-emerald-400" : "text-red-400")}>
+              {systemHealth && systemHealth.every(n => n.status === 'OK') ? 'All Systems Nominal' : 'Degraded Service'}
+            </span>
           </Badge>
         </div>
       </motion.div>
@@ -233,11 +233,8 @@ export function DashboardPage() {
           </p>
           <div className="flex items-center gap-3 mt-2">
             <Badge variant="secondary" className="text-xs px-3 py-1">
-              Last incident resolved 4h ago
+              No active incidents
             </Badge>
-            <Button variant="outline" size="sm" className="text-xs cursor-pointer">
-              View Recent Activity
-            </Button>
           </div>
         </motion.div>
       ) : (

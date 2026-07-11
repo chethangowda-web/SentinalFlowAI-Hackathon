@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export function IntelligenceDashboard() {
-  const incidentId = 'INC-101';
+  const incidentId = new URLSearchParams(window.location.search).get('incidentId') || '';
   const { decision, isLoading, isError, error, refetchDecision, approveDecision, isApproving } = useDecisionDetails(incidentId);
   const { runbooks, engineers, isLoadingRunbooks, isLoadingEngineers } = useRecommendations();
 
@@ -44,35 +44,9 @@ export function IntelligenceDashboard() {
     toast.info('Recomputing AI models diagnosis...');
   };
 
-  const mockEvidenceData = {
-    kubernetes: {
-      pod: 'auth-db-primary-7c7f466b6b-k82x2',
-      namespace: 'production',
-      status: 'OOMKilled',
-      restartCount: 4,
-      logs: [
-        '[2026-07-09T11:58:12Z] [ERROR] connection pool timeout after 30000ms',
-        '[2026-07-09T11:59:01Z] [FATAL] java.lang.OutOfMemoryError: Java heap space'
-      ]
-    },
-    prometheus: {
-      active_connections: 998,
-      connection_limit: 1000,
-      memory_utilization_pct: 98.4
-    }
-  };
+  const evidenceData = decision?.evidenceData || null;
 
-  const mockSimilarIncidents = [
-    {
-      id: 'INC-82',
-      title: 'Database connection leakage under API load spikes',
-      similarity: 94,
-      resolution: 'Scaled pool capacity by 50% via config hot reload.',
-      duration: '14m 20s',
-      runbookUsed: 'rbk_scale_db',
-      outcome: 'SUCCESS' as const
-    }
-  ];
+  const similarIncidents = decision?.similarIncidents || [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -179,13 +153,18 @@ export function IntelligenceDashboard() {
                   <div className="space-y-3">
                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Historically Similar Outages</span>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {mockSimilarIncidents.map(inc => (
+                      {similarIncidents.length > 0 ? (similarIncidents as { id: string; title: string; similarity: number; resolution: string; duration: string; runbookUsed: string; outcome: 'SUCCESS' | 'FAILED' }[]).map(inc => (
                         <IncidentSimilarityCard
                           key={inc.id}
                           incident={inc}
-                          onCompare={() => toast.info(`Comparing INC-101 with ${inc.id}`)}
+                          onCompare={() => toast.info(`Comparing ${incidentId} with ${inc.id}`)}
                         />
-                      ))}
+                      )) : (
+                        <div className="col-span-2 flex flex-col items-center justify-center py-8 text-muted-foreground">
+                          <p className="text-sm">No similar incidents found</p>
+                          <p className="text-xs">Similar incidents will appear here as the system learns</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </TabsContent>
@@ -225,13 +204,13 @@ export function IntelligenceDashboard() {
                     <div className="space-y-2">
                       <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Kubernetes Container State</span>
                       <div className="border border-border/40 rounded-xl bg-muted/10 p-4 overflow-auto max-h-[350px]">
-                        <JsonViewer data={mockEvidenceData.kubernetes} />
+                        <JsonViewer data={evidenceData?.kubernetes || { message: 'No Kubernetes evidence data available' }} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Prometheus Connection Stats</span>
                       <div className="border border-border/40 rounded-xl bg-muted/10 p-4 overflow-auto max-h-[350px]">
-                        <JsonViewer data={mockEvidenceData.prometheus} />
+                        <JsonViewer data={evidenceData?.prometheus || { message: 'No Prometheus evidence data available' }} />
                       </div>
                     </div>
                   </div>

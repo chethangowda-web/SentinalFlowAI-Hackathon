@@ -19,6 +19,16 @@ export interface DecisionReport {
   estimatedResolutionTime?: string;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   approvalRecommendation?: 'AUTO_REMEDIATE' | 'MANUAL_REVIEW' | 'ROLLBACK';
+  evidenceData?: Record<string, any>;
+  similarIncidents?: {
+    id: string;
+    title: string;
+    similarity: number;
+    resolution: string;
+    duration: string;
+    runbookUsed: string;
+    outcome: string;
+  }[];
 }
 
 export interface RunbookRecommendation {
