@@ -1,4 +1,5 @@
 import { registerApiRoute } from '@mastra/core/server';
+import { requireAuth } from '../auth/middleware/requireAuth';
 import { randomUUID } from 'crypto';
 import { incidentService } from '../incidents/services/IncidentService';
 import { statisticsService } from '../incidents/services/StatisticsService';
@@ -50,6 +51,7 @@ const handleError = (c: any, error: unknown) => {
 
 export const createIncidentRoute = registerApiRoute('/custom/v1/incidents', {
   method: 'POST',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const body = await c.req.json();
@@ -82,6 +84,7 @@ export const createIncidentRoute = registerApiRoute('/custom/v1/incidents', {
 
 export const getIncidentsRoute = registerApiRoute('/custom/v1/incidents', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const qs = c.req.query ? c.req.query() : {};
@@ -101,6 +104,7 @@ export const getIncidentsRoute = registerApiRoute('/custom/v1/incidents', {
 
 export const getIncidentByIdRoute = registerApiRoute('/custom/v1/incidents/:id', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -114,6 +118,7 @@ export const getIncidentByIdRoute = registerApiRoute('/custom/v1/incidents/:id',
 
 export const updateIncidentStatusRoute = registerApiRoute('/custom/v1/incidents/:id/status', {
   method: 'PATCH',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -134,6 +139,7 @@ export const updateIncidentStatusRoute = registerApiRoute('/custom/v1/incidents/
 
 export const assignIncidentRoute = registerApiRoute('/custom/v1/incidents/:id/assign', {
   method: 'PATCH',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -154,6 +160,7 @@ export const assignIncidentRoute = registerApiRoute('/custom/v1/incidents/:id/as
 
 export const resolveIncidentRoute = registerApiRoute('/custom/v1/incidents/:id/resolve', {
   method: 'PATCH',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -174,6 +181,7 @@ export const resolveIncidentRoute = registerApiRoute('/custom/v1/incidents/:id/r
 
 export const closeIncidentRoute = registerApiRoute('/custom/v1/incidents/:id/close', {
   method: 'PATCH',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -194,6 +202,7 @@ export const closeIncidentRoute = registerApiRoute('/custom/v1/incidents/:id/clo
 
 export const deleteIncidentRoute = registerApiRoute('/custom/v1/incidents/:id', {
   method: 'DELETE',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -216,6 +225,7 @@ export const deleteIncidentRoute = registerApiRoute('/custom/v1/incidents/:id', 
 
 export const addNoteRoute = registerApiRoute('/custom/v1/incidents/:id/notes', {
   method: 'POST',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -236,6 +246,7 @@ export const addNoteRoute = registerApiRoute('/custom/v1/incidents/:id/notes', {
 
 export const getNotesRoute = registerApiRoute('/custom/v1/incidents/:id/notes', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -249,6 +260,7 @@ export const getNotesRoute = registerApiRoute('/custom/v1/incidents/:id/notes', 
 
 export const getTimelineRoute = registerApiRoute('/custom/v1/incidents/:id/timeline', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -264,6 +276,7 @@ export const getTimelineRoute = registerApiRoute('/custom/v1/incidents/:id/timel
 
 export const getAuditRoute = registerApiRoute('/custom/v1/incidents/:id/audit', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -282,6 +295,7 @@ export const getAuditRoute = registerApiRoute('/custom/v1/incidents/:id/audit', 
 
 export const dashboardOverviewRoute = registerApiRoute('/custom/v1/dashboard/overview', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const stats = await statisticsService.getDashboardStats();
@@ -294,6 +308,7 @@ export const dashboardOverviewRoute = registerApiRoute('/custom/v1/dashboard/ove
 
 export const dashboardTrendsRoute = registerApiRoute('/custom/v1/dashboard/trends', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const trends = await statisticsService.getTrendStats();
@@ -306,6 +321,7 @@ export const dashboardTrendsRoute = registerApiRoute('/custom/v1/dashboard/trend
 
 export const dashboardSeverityRoute = registerApiRoute('/custom/v1/dashboard/severity', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const severity = await statisticsService.getSeverityStats();
@@ -318,6 +334,7 @@ export const dashboardSeverityRoute = registerApiRoute('/custom/v1/dashboard/sev
 
 export const dashboardServicesRoute = registerApiRoute('/custom/v1/dashboard/services', {
   method: 'GET',
+  middleware: [requireAuth],
   handler: async (c) => {
     try {
       const services = await statisticsService.getServiceStats();

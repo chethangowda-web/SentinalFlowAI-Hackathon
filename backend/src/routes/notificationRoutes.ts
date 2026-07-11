@@ -1,4 +1,5 @@
 import { registerApiRoute } from '@mastra/core/server';
+import { requireAuth } from '../auth/middleware/requireAuth';
 import { z } from 'zod';
 import { notificationRepository } from '../database/repositories/NotificationRepository';
 import { notificationQueue } from '../notifications/NotificationQueue';
@@ -6,6 +7,7 @@ import { eventPublisher } from '../events/EventPublisher';
 
 export const getNotificationsRoute = registerApiRoute('/custom/v1/notifications', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     return c.json({
       queueDepth: notificationQueue.metrics.queued - (notificationQueue.metrics.delivered + notificationQueue.metrics.failed),
@@ -25,6 +27,7 @@ export const getNotificationsRoute = registerApiRoute('/custom/v1/notifications'
 
 export const getNotificationByIdRoute = registerApiRoute('/custom/v1/notifications/:id', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const id = c.req.param('id');
     const notif = await notificationRepository.getNotificationById(id);
@@ -37,6 +40,7 @@ export const getNotificationByIdRoute = registerApiRoute('/custom/v1/notificatio
 
 export const getNotificationHistoryRoute = registerApiRoute('/custom/v1/notifications/history', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const limit = parseInt(c.req.query('limit') || '100');
     const offset = parseInt(c.req.query('offset') || '0');
@@ -47,6 +51,7 @@ export const getNotificationHistoryRoute = registerApiRoute('/custom/v1/notifica
 
 export const testNotificationRoute = registerApiRoute('/custom/v1/notifications/test', {
   method: 'POST',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     try {
       const body = await c.req.json();
@@ -78,6 +83,7 @@ export const testNotificationRoute = registerApiRoute('/custom/v1/notifications/
 
 export const updatePreferencesRoute = registerApiRoute('/custom/v1/notifications/preferences', {
   method: 'PATCH',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     try {
       const body = await c.req.json();

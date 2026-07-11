@@ -1,4 +1,5 @@
 import { registerApiRoute } from '@mastra/core/server';
+import { requireAuth } from '../auth/middleware/requireAuth';
 import { z } from 'zod';
 import { runbookRepository } from '../database/repositories/RunbookRepository';
 import { runbookEngine } from '../runbooks/engine/RunbookEngine';
@@ -26,6 +27,7 @@ const createRunbookSchema = z.object({
 
 export const listRunbooksRoute = registerApiRoute('/runbooks', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const list = await runbookRepository.listRunbooks();
     return c.json(list, 200);
@@ -34,6 +36,7 @@ export const listRunbooksRoute = registerApiRoute('/runbooks', {
 
 export const createRunbookRoute = registerApiRoute('/runbooks', {
   method: 'POST',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     try {
       const body = await c.req.json();
@@ -56,6 +59,7 @@ export const createRunbookRoute = registerApiRoute('/runbooks', {
 
 export const updateRunbookRoute = registerApiRoute('/runbooks/:id', {
   method: 'PATCH',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -72,6 +76,7 @@ export const updateRunbookRoute = registerApiRoute('/runbooks/:id', {
 
 export const deleteRunbookRoute = registerApiRoute('/runbooks/:id', {
   method: 'DELETE',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const id = c.req.param('id');
     await runbookRepository.deleteRunbook(id);
@@ -81,6 +86,7 @@ export const deleteRunbookRoute = registerApiRoute('/runbooks/:id', {
 
 export const executeRunbookRoute = registerApiRoute('/runbooks/:id/execute', {
   method: 'POST',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     try {
       const id = c.req.param('id');
@@ -129,6 +135,7 @@ export const executeRunbookRoute = registerApiRoute('/runbooks/:id/execute', {
 
 export const listExecutionsRoute = registerApiRoute('/runbooks/executions', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const limit = parseInt(c.req.query('limit') || '50');
     const offset = parseInt(c.req.query('offset') || '0');
@@ -139,6 +146,7 @@ export const listExecutionsRoute = registerApiRoute('/runbooks/executions', {
 
 export const getExecutionByIdRoute = registerApiRoute('/runbooks/executions/:id', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const id = c.req.param('id');
     const execution = await runbookRepository.getExecutionById(id);
@@ -151,6 +159,7 @@ export const getExecutionByIdRoute = registerApiRoute('/runbooks/executions/:id'
 
 export const getRunbookHistoryRoute = registerApiRoute('/runbooks/:id/history', {
   method: 'GET',
+  middleware: [requireAuth as any],
   handler: async (c) => {
     const id = c.req.param('id');
     // For simple history list executions of a specific runbook

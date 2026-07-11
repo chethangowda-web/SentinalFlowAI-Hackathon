@@ -1,4 +1,5 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
+import https from 'https';
 import { RetryService, isTransientHttpError } from './retryService';
 import { config } from '../../config/config';
 
@@ -57,6 +58,7 @@ public async initialize(): Promise<void> {
       url: config.qdrant.url,
       apiKey: config.qdrant.apiKey,
       checkCompatibility: false,
+      httpsAgent: new https.Agent({ keepAlive: true }),
     });
 
     this.collectionName = config.qdrant.collection;
@@ -114,7 +116,6 @@ public async initialize(): Promise<void> {
           this.degraded = false;
         })
         .catch((err) => {
-          this.initPromise = null;  // allow retry on next call
           this.degraded = true;
           console.warn(`[QdrantMemory] ensureInitialized failed (falling back to degraded mode): ${err.message}`);
         });

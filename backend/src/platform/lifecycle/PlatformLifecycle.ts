@@ -5,21 +5,11 @@ import { LoggerService } from '../../mastra/services/loggerService';
 import { workerManager } from '../scheduler/Scheduler';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function runMigrations(): Promise<void> {
   const log = new LoggerService('Migrations');
-  const migrationsDir = path.join(__dirname, '../../database/migrations');
+  const migrationsDir = path.resolve(process.cwd(), 'src', 'database', 'migrations');
 
-  console.log("========== RUN MIGRATIONS ==========");
-  console.log(__dirname);
-
-  console.log(migrationsDir);
-  console.log(fs.existsSync(migrationsDir));
-  
   if (!fs.existsSync(migrationsDir)) {
     log.warn('[Migrations] Migrations directory not found, skipping.');
     return;

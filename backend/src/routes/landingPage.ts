@@ -243,15 +243,14 @@ const LANDING_PAGE_HTML = `<!DOCTYPE html>
     <div class="endpoint-grid">
       <a href="/health" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/health</span></a>
       <a href="/health/ready" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/health/ready</span></a>
-      <a href="/custom/v1/dashboard/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/platform/status</span></a>
-      <a href="/custom/v1/dashboard/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/dashboard</span></a>
-      <a href="/custom/v1/incidents" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/incidents</span></a>
-      <a href="/custom/v1/incidents" class="endpoint-item"><span class="method-badge post">POST</span><span class="path-text">/api/incidents</span></a>
-      <a href="/custom/v1/agents" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/agents</span></a>
-      <a href="/runbooks" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/runbooks</span></a>
-      <a href="/custom/v1/governance/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/governance</span></a>
-      <a href="/custom/v1/learning/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/learning</span></a>
-      <a href="/custom/v1/intelligence/dashboard" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/api/reports</span></a>
+      <a href="/custom/v1/dashboard/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/custom/v1/dashboard/overview</span></a>
+      <a href="/custom/v1/incidents" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/custom/v1/incidents</span></a>
+      <a href="/custom/v1/incidents" class="endpoint-item"><span class="method-badge post">POST</span><span class="path-text">/custom/v1/incidents</span></a>
+      <a href="/custom/v1/agents" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/custom/v1/agents</span></a>
+      <a href="/runbooks" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/runbooks</span></a>
+      <a href="/custom/v1/governance/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/custom/v1/governance/overview</span></a>
+      <a href="/custom/v1/learning/overview" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/custom/v1/learning/overview</span></a>
+      <a href="/custom/v1/intelligence/dashboard" class="endpoint-item"><span class="method-badge get">GET</span><span class="path-text">/custom/v1/intelligence/dashboard</span></a>
     </div>
     <div class="section-title"><span class="bar"></span>Resources</div>
     <div class="link-group">
