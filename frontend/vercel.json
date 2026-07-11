@@ -36,6 +36,8 @@
   "crons": [],
   "env": {
     "VITE_ENV": "production",
-    "VITE_BUILD_VERSION": "0.1.0"
+    "VITE_BUILD_VERSION": "0.1.0",
+    "VITE_API_URL": "https://sentinalflowai-hackathon.onrender.com",
+    "VITE_WS_URL": "wss://sentinalflowai-hackathon.onrender.com"
   }
 }
