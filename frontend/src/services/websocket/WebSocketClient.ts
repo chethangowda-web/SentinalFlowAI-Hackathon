@@ -8,8 +8,8 @@ export class WebSocketClient {
   private url: string;
   private subscribers: Map<string, Set<MessageCallback>> = new Map();
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectInterval = 3000;
+  private maxReconnectAttempts = 20;
+  private reconnectInterval = 1000;
   private heartbeatInterval: any = null;
 
   private constructor(url: string) {

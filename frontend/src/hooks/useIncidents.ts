@@ -7,7 +7,9 @@ export function useIncidents(filters?: Record<string, any>) {
   const incidentsQuery = useQuery({
     queryKey: ['incidents', 'list', filters],
     queryFn: () => incidentApi.getIncidents(filters),
-    refetchInterval: 30000,
+    refetchInterval: 10000,
+    retry: 3,
+    retryDelay: 2000,
   });
 
   const createIncidentMutation = useMutation({

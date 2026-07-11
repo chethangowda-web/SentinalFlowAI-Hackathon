@@ -7,34 +7,48 @@ export function useDashboard() {
   const overviewQuery = useQuery({
     queryKey: ['dashboard', 'overview'],
     queryFn: () => dashboardApi.getOverviewStats(),
-    refetchInterval: 300000,
+    refetchInterval: 15000,
+    retry: 3,
+    retryDelay: 2000,
   });
 
   const trendsQuery = useQuery({
     queryKey: ['dashboard', 'trends'],
     queryFn: () => dashboardApi.getTrends(),
-    refetchInterval: 300000,
+    refetchInterval: 60000,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   const severityQuery = useQuery({
     queryKey: ['dashboard', 'severity'],
     queryFn: () => dashboardApi.getSeverity(),
-    refetchInterval: 300000,
+    refetchInterval: 60000,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   const servicesQuery = useQuery({
     queryKey: ['dashboard', 'services'],
     queryFn: () => dashboardApi.getServices(),
-    refetchInterval: 300000,
+    refetchInterval: 60000,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   const intelligenceQuery = useQuery({
     queryKey: ['dashboard', 'intelligence'],
     queryFn: async () => {
-      const res = await apiClient.get<{ success: boolean; data: any }>('/custom/v1/intelligence/dashboard');
-      return res.data.data;
+      try {
+        const res = await apiClient.get<{ success: boolean; data: any }>('/custom/v1/intelligence/dashboard');
+        return res.data.data;
+      } catch {
+        return null;
+      }
     },
-    refetchInterval: 300000,
+    refetchInterval: 30000,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   const healthQuery = useQuery<SystemHealthNode[]>({
@@ -68,7 +82,9 @@ export function useDashboard() {
         ];
       }
     },
-    refetchInterval: 300000,
+    refetchInterval: 30000,
+    retry: 3,
+    retryDelay: 2000,
   });
 
   const isLoading =
@@ -79,11 +95,7 @@ export function useDashboard() {
     intelligenceQuery.isLoading;
 
   const isError =
-    overviewQuery.isError ||
-    trendsQuery.isError ||
-    severityQuery.isError ||
-    servicesQuery.isError ||
-    intelligenceQuery.isError;
+    (overviewQuery.isError && trendsQuery.isError && severityQuery.isError && servicesQuery.isError && intelligenceQuery.isError);
 
   return {
     stats: overviewQuery.data || null,

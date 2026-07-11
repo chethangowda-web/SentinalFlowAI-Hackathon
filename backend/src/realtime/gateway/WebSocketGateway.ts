@@ -504,7 +504,7 @@ export class WebSocketGateway implements IWebSocketTransport {
   }
 
   public isHealthy(): boolean {
-    return this.server && this.server.listening;
+    return this.started;
   }
 
   public async shutdown(): Promise<void> {

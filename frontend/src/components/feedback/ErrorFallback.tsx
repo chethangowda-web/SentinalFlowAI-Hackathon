@@ -2,7 +2,7 @@ import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ErrorFallbackProps {
-  error: Error;
+  error: unknown;
   resetErrorBoundary: () => void;
 }
 
@@ -17,12 +17,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps)
         An unexpected error occurred in the application shell.
       </p>
       <div className="w-full text-left bg-black/40 border p-4 rounded-md mb-6 font-mono text-xs overflow-auto max-h-[200px] text-destructive-foreground">
-        {error.message || 'Unknown error'}
-        {error.stack && (
-          <pre className="mt-2 text-[10px] text-muted-foreground whitespace-pre-wrap">
-            {error.stack}
-          </pre>
-        )}
+        {(error instanceof Error ? error.message : String(error)) || 'Unknown error'}
       </div>
       <Button onClick={resetErrorBoundary} className="gap-2">
         <RotateCcw className="w-4 h-4" />

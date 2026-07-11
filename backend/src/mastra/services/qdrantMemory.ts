@@ -117,6 +117,7 @@ public async initialize(): Promise<void> {
         })
         .catch((err) => {
           this.degraded = true;
+          this.initPromise = null; // Allow retry on next call
           console.warn(`[QdrantMemory] ensureInitialized failed (falling back to degraded mode): ${err.message}`);
         });
     }
