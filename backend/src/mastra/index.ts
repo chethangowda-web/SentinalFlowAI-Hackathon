@@ -1,9 +1,18 @@
+import http from 'http';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { LibSQLStore } from '@mastra/libsql';
 import { Observability, MastraStorageExporter, MastraPlatformExporter, SensitiveDataFilter } from '@mastra/observability';
 import { createGroq } from '@ai-sdk/groq';
+import { webSocketGateway } from '../realtime/gateway/WebSocketGateway';
 import { incidentAnalyzer } from './agents/incident/incidentAnalyzer';
+
+const originalCreateServer = http.createServer.bind(http);
+http.createServer = ((...args: any[]) => {
+  const server = originalCreateServer(...args);
+  process.nextTick(() => webSocketGateway.attachToExistingServer(server));
+  return server;
+}) as typeof http.createServer;
 import { anomalyDetector } from './agents/incident/anomalyDetector';
 import { sreAssistant } from './agents/incident/sreAssistant';
 import { rootCauseAnalyzer } from './agents/incident/rootCauseAnalyzer';

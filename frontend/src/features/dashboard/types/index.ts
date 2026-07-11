@@ -61,3 +61,89 @@ export interface DashboardFilters {
   severity: 'all' | 'low' | 'medium' | 'high' | 'critical';
   assignedTeam: string | null;
 }
+
+export interface WarRoomIncident {
+  id: string;
+  title: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  status: string;
+  service: string;
+  environment: string;
+  detectedAt: string;
+  acknowledgedAt: string | null;
+  resolvedAt: string | null;
+  rootCause: string;
+  confidence: number;
+  timeline: WarRoomTimelineEvent[];
+  aiReasoning: string;
+  agentProgress: AgentProgress[];
+  logs: LogEntry[];
+  metrics: WarRoomMetrics;
+  suggestedRunbook: string;
+  enkryptTrustScore: number;
+}
+
+export interface WarRoomTimelineEvent {
+  time: string;
+  title: string;
+  description: string;
+  type: 'alert' | 'agent' | 'decision' | 'action' | 'notification' | 'resolution';
+}
+
+export interface AgentProgress {
+  id: string;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  time: string;
+  confidence: number;
+  model: string;
+  task: string;
+}
+
+export interface LogEntry {
+  time: string;
+  level: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
+  message: string;
+}
+
+export interface WarRoomMetrics {
+  cpu: number;
+  memory: number;
+  latency: number;
+  errorRate: number;
+  throughput: number;
+}
+
+export interface ExecutiveKPI {
+  label: string;
+  value: string;
+  trend: number;
+  trendDirection: 'up' | 'down' | 'neutral';
+  icon: string;
+  color: string;
+}
+
+export interface HeatmapItem {
+  service: string;
+  health: number;
+  status: 'OK' | 'DEGRADED' | 'ERROR';
+  latency: number;
+  errorRate: number;
+}
+
+export interface AITimelineEvent {
+  time: string;
+  title: string;
+  agent: string;
+  icon: string;
+  status: 'completed' | 'running' | 'pending' | 'failed';
+}
+
+export interface TopologyNode {
+  id: string;
+  type: string;
+  label: string;
+  status: 'OK' | 'DEGRADED' | 'ERROR';
+  icon: string;
+}

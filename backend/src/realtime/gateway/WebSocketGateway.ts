@@ -54,7 +54,6 @@ export class WebSocketGateway implements IWebSocketTransport {
       },
     });
 
-    this.setupUpgradeHandler();
     this.setupServerListeners();
 
     // Register gateway as the transport on BroadcastService
@@ -63,9 +62,22 @@ export class WebSocketGateway implements IWebSocketTransport {
 
   private started = false;
 
-  public async start(): Promise<void> {
+  public attachToExistingServer(externalServer: HttpServer): void {
+    if (this.started) return;
+    this.server = externalServer;
+    this.setupUpgradeHandler();
+    this.started = true;
+    this.log.info('WebSocket Gateway attached to existing HTTP server');
+    this.startHeartbeatMonitor();
+  }
+
+  public async start(externalServer?: HttpServer): Promise<void> {
     if (this.started) {
       this.log.warn('WebSocket Gateway already started — skipping duplicate listen');
+      return;
+    }
+    if (externalServer) {
+      this.attachToExistingServer(externalServer);
       return;
     }
     if (this.server.listening) {
@@ -74,6 +86,7 @@ export class WebSocketGateway implements IWebSocketTransport {
       return;
     }
     const port = config.websocket.port;
+    this.setupUpgradeHandler();
     return new Promise<void>((resolve, reject) => {
       this.server.once('error', (err: NodeJS.ErrnoException) => {
         if (err.code === 'EADDRINUSE') {

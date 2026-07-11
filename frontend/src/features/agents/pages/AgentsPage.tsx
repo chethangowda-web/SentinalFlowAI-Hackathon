@@ -3,7 +3,12 @@ import { motion } from 'framer-motion';
 import { AgentCard, type AgentStatus } from '@/components/ai/AgentCard';
 import { AgentGraph } from '@/components/ai/AgentGraph';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Activity, CheckCircle, Clock, Cpu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Bot, Activity, CheckCircle, Clock, Cpu, Play,
+  Zap, GitBranch, RefreshCw,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { Node, Edge } from '@xyflow/react';
 
 const PIPELINE_STAGES = [
@@ -13,7 +18,7 @@ const PIPELINE_STAGES = [
   { id: '4', name: 'Infrastructure Monitoring', model: 'prometheus/grafana', runs: 980, rate: 94, status: 'IDLE' as AgentStatus, lastActive: '5m ago' },
   { id: '5', name: 'Kubernetes Operations', model: 'k8s-api', runs: 920, rate: 93, status: 'IDLE' as AgentStatus, lastActive: '5m ago' },
   { id: '6', name: 'Security Compliance', model: 'static-analysis', runs: 870, rate: 95, status: 'IDLE' as AgentStatus, lastActive: '8m ago' },
-  { id: '7', name: 'Alert & Deployment Correlation', model: 'argo/github', runs: 840, rate: 91, status: 'IDLE' as AgentStatus, lastActive: '8m ago' },
+  { id: '7', name: 'Alert Correlation', model: 'argo/github', runs: 840, rate: 91, status: 'IDLE' as AgentStatus, lastActive: '8m ago' },
   { id: '8', name: 'Root Cause Analysis', model: 'groq/llama-3.1-8b', runs: 790, rate: 89, status: 'IDLE' as AgentStatus, lastActive: '10m ago' },
   { id: '9', name: 'Runbook Recommendation', model: 'groq/llama-3.1-8b', runs: 740, rate: 90, status: 'IDLE' as AgentStatus, lastActive: '10m ago' },
   { id: '10', name: 'Decision Intelligence', model: 'groq/llama-3.1-8b', runs: 690, rate: 88, status: 'IDLE' as AgentStatus, lastActive: '12m ago' },
@@ -65,17 +70,23 @@ const TOPOLOGY_EDGES: Edge[] = [
   { id: 'e13-16', source: '13', target: '16' },
 ];
 
-function MetricBadge({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string | number; color: string }) {
+function MetricBadge({ icon: Icon, label, value, color }: {
+  icon: React.ComponentType<{ className?: string }>; label: string; value: string | number; color: string;
+}) {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-accent/30 border border-border/30">
+    <motion.div
+      className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-accent/20 border border-border/30"
+      whileHover={{ y: -1 }}
+      transition={{ duration: 0.2 }}
+    >
       <div className="p-1.5 rounded-md" style={{ backgroundColor: `${color}15`, color }}>
         <Icon className="w-4 h-4" />
       </div>
       <div>
-        <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
+        <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
         <p className="text-sm font-bold font-mono text-foreground">{value}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -88,22 +99,28 @@ export function AgentsPage() {
   return (
     <motion.div
       className="space-y-6"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">SRE Pipeline Agents</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Agent Pipeline Orchestration</h1>
           <p className="text-sm text-muted-foreground">
             16-stage pipeline: Incident Intake → Anomaly Detection → Decision Intelligence → Governance
           </p>
         </div>
-        <Badge variant="secondary" className="gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          15 Online
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="gap-1.5 text-xs px-3 py-1">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
+            {totalAgents - activeAgents} Online
+          </Badge>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs cursor-pointer h-8">
+            <Play className="w-3 h-3" />
+            Run Pipeline
+          </Button>
+        </div>
       </div>
 
       {/* Summary Metrics */}
@@ -116,13 +133,13 @@ export function AgentsPage() {
       </div>
 
       {/* Agent Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {PIPELINE_STAGES.map((stage, i) => (
           <motion.div
             key={stage.id}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03, duration: 0.3 }}
+            transition={{ delay: i * 0.02, duration: 0.3 }}
           >
             <AgentCard
               name={stage.name}
@@ -136,8 +153,22 @@ export function AgentsPage() {
         ))}
       </div>
 
-      {/* Topology Graph */}
-      <AgentGraph nodes={TOPOLOGY_NODES} edges={TOPOLOGY_EDGES} />
+      {/* Pipeline Topology Graph */}
+      <div className="rounded-xl border border-border/40 overflow-hidden bg-card/50">
+        <div className="px-4 py-2.5 border-b border-border/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GitBranch className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-foreground">Pipeline Topology</span>
+          </div>
+          <Badge variant="outline" className="text-[10px] gap-1.5">
+            <RefreshCw className="w-3 h-3" />
+            Auto-layout
+          </Badge>
+        </div>
+        <div className="h-[500px]">
+          <AgentGraph nodes={TOPOLOGY_NODES} edges={TOPOLOGY_EDGES} />
+        </div>
+      </div>
     </motion.div>
   );
 }

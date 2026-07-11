@@ -23,6 +23,10 @@ export class RealtimeService {
   public subscribeToConnectionStatus(callback: (status: any) => void) {
     return this.client.subscribe('status', callback);
   }
+
+  public subscribeToDashboardUpdate(callback: (stats: any) => void) {
+    return this.client.subscribe('dashboard:update', callback, 'dashboard');
+  }
 }
 
 export const realtimeService = new RealtimeService();

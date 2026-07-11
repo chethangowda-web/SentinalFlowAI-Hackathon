@@ -1,4 +1,3 @@
-import { webSocketGateway } from './gateway/WebSocketGateway';
 import { RealtimeEventPublisher } from './events/RealtimeEventPublisher';
 import { eventRegistry } from '../events/EventRegistry';
 
@@ -39,6 +38,6 @@ export async function initializeRealtime(): Promise<void> {
     eventRegistry.register(eventType, publisher);
   }
 
-  // 2. Start WebSocket Gateway
-  await webSocketGateway.start();
+  // 2. WebSocket Gateway will be auto-attached to the Mastra HTTP server
+  //    via monkey-patched http.createServer in mastra/index.ts
 }

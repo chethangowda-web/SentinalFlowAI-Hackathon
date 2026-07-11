@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDecisionDetails } from '@/hooks/useDecisionDetails';
 import { useRecommendations } from '@/hooks/useRecommendations';
 import { AIOverviewCard } from '@/components/ai/AIOverviewCard';
@@ -15,10 +16,13 @@ import { EngineerRecommendationCard } from '@/components/ai/EngineerRecommendati
 import { IncidentSimilarityCard } from '@/components/ai/IncidentSimilarityCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { JsonViewer } from '@/components/data/JsonViewer';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, Sparkles, CheckCircle, XCircle, RotateCw, MessageSquare, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export function IntelligenceDashboard() {
   const incidentId = 'INC-101';
@@ -70,190 +74,254 @@ export function IntelligenceDashboard() {
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } },
+  };
+
   if (isLoading || isLoadingRunbooks || isLoadingEngineers) {
     return (
       <div className="flex h-[80svh] items-center justify-center">
-        <LoadingSpinner />
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            <Sparkles className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="text-sm text-muted-foreground animate-pulse">Loading AI intelligence...</p>
+        </div>
       </div>
     );
   }
 
   if (isError || !decision) {
-  const errorMsg = (error && (error as any).message) || 'Failed to connect to decision intelligence stream';
-  return (
-    <div className="flex h-[80svh] flex-col items-center justify-center space-y-4">
-      <p className="text-xs text-red-400 font-mono">{errorMsg}</p>
-      <button
-        onClick={() => refetchDecision()}
-        className="px-4 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
-
-  return (
-    <div className="space-y-6 select-none pb-24">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-100 font-mono flex items-center gap-2">
-          <BrainCircuit className="w-6 h-6 text-purple-400" />
-          AI Decision Intelligence Center
-        </h1>
-        <p className="text-xs text-muted-foreground">Automated diagnostics, reasoning analysis, and agent action models</p>
+    const errorMsg = (error && (error as any).message) || 'Failed to connect to decision intelligence stream';
+    return (
+      <div className="flex h-[80svh] flex-col items-center justify-center space-y-5">
+        <div className="p-4 rounded-full bg-destructive/10">
+          <XCircle className="w-8 h-8 text-destructive" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-semibold text-foreground">Unable to load AI diagnosis</p>
+          <p className="text-xs text-muted-foreground font-mono">{errorMsg}</p>
+        </div>
+        <Button onClick={() => refetchDecision()} size="sm" variant="outline" className="cursor-pointer">
+          Retry
+        </Button>
       </div>
+    );
+  }
 
-      <AIOverviewCard
-        title={decision.recommendedAction}
-        severity="CRITICAL"
-        confidence={decision.confidence}
-        impact="High capacity pool limit saturation causing database timeout warnings"
-        eta="~10 minutes"
-      />
+  return (
+    <motion.div
+      className="space-y-6 select-none pb-24"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      {/* Header */}
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <BrainCircuit className="w-6 h-6 text-primary" />
+            AI Decision Intelligence
+          </h1>
+          <p className="text-sm text-muted-foreground">Automated diagnostics, reasoning analysis, and agent action models</p>
+        </div>
+        <Badge variant="secondary" className="gap-1.5 text-xs px-3 py-1">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
+          Copilot Active
+        </Badge>
+      </motion.div>
 
+      {/* AI Overview */}
+      <motion.div variants={itemVariants}>
+        <AIOverviewCard
+          title={decision.recommendedAction}
+          severity="CRITICAL"
+          confidence={decision.confidence}
+          impact="High capacity pool limit saturation causing database timeout warnings"
+          eta="~10 minutes"
+        />
+      </motion.div>
+
+      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid grid-cols-6 h-9 bg-black/10 text-xs shrink-0">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="root-cause">Root Cause</TabsTrigger>
-              <TabsTrigger value="recommendations">Runbooks</TabsTrigger>
-              <TabsTrigger value="assignments">Engineers</TabsTrigger>
-              <TabsTrigger value="evidence">Evidence</TabsTrigger>
-              <TabsTrigger value="reasoning">Reasoning Viewer</TabsTrigger>
-            </TabsList>
+        <div className="lg:col-span-3 space-y-6">
+          <motion.div variants={itemVariants}>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="bg-card border border-border/30 rounded-xl p-1 h-auto gap-0 flex-wrap">
+                <TabsTrigger value="overview" className="text-xs px-3 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">Overview</TabsTrigger>
+                <TabsTrigger value="root-cause" className="text-xs px-3 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">Root Cause</TabsTrigger>
+                <TabsTrigger value="recommendations" className="text-xs px-3 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">Runbooks</TabsTrigger>
+                <TabsTrigger value="assignments" className="text-xs px-3 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">Engineers</TabsTrigger>
+                <TabsTrigger value="evidence" className="text-xs px-3 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">Evidence</TabsTrigger>
+                <TabsTrigger value="reasoning" className="text-xs px-3 py-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg">Reasoning</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="overview" className="space-y-6 outline-none">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ConfidenceGauge score={decision.confidence} />
-                <ConfidenceBreakdown breakdown={decision.confidenceBreakdown} />
-                <RiskMatrix severity="CRITICAL" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <AutomationCard probability={96} />
-                <RecommendationScore accuracy={98.4} />
-              </div>
-
-              <div className="space-y-3">
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Historically Similar Outages</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockSimilarIncidents.map(inc => (
-                    <IncidentSimilarityCard
-                      key={inc.id}
-                      incident={inc}
-                      onCompare={() => toast.info(`Comparing INC-101 with ${inc.id}`)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="root-cause" className="outline-none">
-              <RootCauseExplorer possibleCauses={decision.possibleRootCauses} />
-            </TabsContent>
-
-            <TabsContent value="recommendations" className="space-y-4 outline-none">
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Recommended Runbook Actions</span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {runbooks.map(rb => (
-                  <RunbookRecommendationCard
-                    key={rb.runbookId}
-                    runbook={rb}
-                    onExecute={(id) => toast.success(`Triggered execution script: ${id}`)}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="assignments" className="space-y-4 outline-none">
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Best Matched SRE Engineers</span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {engineers.map(eng => (
-                  <EngineerRecommendationCard
-                    key={eng.engineerId}
-                    engineer={eng}
-                    onAssign={(id) => toast.success(`Assigned incident to engineer: ${id}`)}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="evidence" className="space-y-4 outline-none">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Kubernetes Container State</span>
-                  <div className="border rounded bg-muted/10 p-3 overflow-auto max-h-[350px]">
-                    <JsonViewer data={mockEvidenceData.kubernetes} />
+              <div className="mt-6">
+                <TabsContent value="overview" className="space-y-6 outline-none mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <ConfidenceGauge score={decision.confidence} />
+                    <ConfidenceBreakdown breakdown={decision.confidenceBreakdown} />
+                    <RiskMatrix severity="CRITICAL" />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Prometheus Connection Stats</span>
-                  <div className="border rounded bg-muted/10 p-3 overflow-auto max-h-[350px]">
-                    <JsonViewer data={mockEvidenceData.prometheus} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AutomationCard probability={96} />
+                    <RecommendationScore accuracy={98.4} />
                   </div>
-                </div>
-              </div>
-            </TabsContent>
 
-            <TabsContent value="reasoning" className="outline-none">
-              <ReasoningViewer
-                modelName={decision.modelName || 'SentinelFlow-Reasoner-v4'}
-                latencyMs={decision.latencyMs || 1420}
-                tokensUsed={decision.tokensUsed || 1024}
-                steps={decision.reasoningSteps || []}
-              />
-            </TabsContent>
-          </Tabs>
+                  <div className="space-y-3">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Historically Similar Outages</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {mockSimilarIncidents.map(inc => (
+                        <IncidentSimilarityCard
+                          key={inc.id}
+                          incident={inc}
+                          onCompare={() => toast.info(`Comparing INC-101 with ${inc.id}`)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="root-cause" className="outline-none mt-0">
+                  <RootCauseExplorer possibleCauses={decision.possibleRootCauses} />
+                </TabsContent>
+
+                <TabsContent value="recommendations" className="space-y-4 outline-none mt-0">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Recommended Runbook Actions</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {runbooks.map(rb => (
+                      <RunbookRecommendationCard
+                        key={rb.runbookId}
+                        runbook={rb}
+                        onExecute={(id) => toast.success(`Triggered execution script: ${id}`)}
+                      />
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="assignments" className="space-y-4 outline-none mt-0">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Best Matched SRE Engineers</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {engineers.map(eng => (
+                      <EngineerRecommendationCard
+                        key={eng.engineerId}
+                        engineer={eng}
+                        onAssign={(id) => toast.success(`Assigned incident to engineer: ${id}`)}
+                      />
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="evidence" className="space-y-4 outline-none mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Kubernetes Container State</span>
+                      <div className="border border-border/40 rounded-xl bg-muted/10 p-4 overflow-auto max-h-[350px]">
+                        <JsonViewer data={mockEvidenceData.kubernetes} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Prometheus Connection Stats</span>
+                      <div className="border border-border/40 rounded-xl bg-muted/10 p-4 overflow-auto max-h-[350px]">
+                        <JsonViewer data={mockEvidenceData.prometheus} />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="reasoning" className="outline-none mt-0">
+                  <ReasoningViewer
+                    modelName={decision.modelName || 'SentinelFlow-Reasoner-v4'}
+                    latencyMs={decision.latencyMs || 1420}
+                    tokensUsed={decision.tokensUsed || 1024}
+                    steps={decision.reasoningSteps || []}
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </motion.div>
         </div>
 
-        <div className="space-y-4">
+        {/* Right: Diagnostics Panel */}
+        <motion.div variants={itemVariants} className="space-y-4">
           <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider font-mono block">Diagnostics Panel</span>
 
-          <Card className="bg-card border-border">
-            <CardContent className="p-3.5 space-y-3.5 text-xs select-none">
-              <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+          <Card className="bg-card border-border/40 rounded-xl">
+            <CardContent className="p-4 space-y-4 text-xs">
+              <div className="flex justify-between items-center py-2 border-b border-border/30">
                 <span className="text-muted-foreground">Copilot Stream</span>
                 <span className="flex items-center gap-1.5 font-bold text-emerald-400 font-mono uppercase text-[10px]">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
                   Live Sync
                 </span>
               </div>
-
-              <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+              <div className="flex justify-between items-center py-2 border-b border-border/30">
                 <span className="text-muted-foreground">Model Status</span>
-                <span className="font-mono text-slate-200 font-semibold uppercase text-[10px]">HEALTHY</span>
+                <span className="font-mono text-foreground font-semibold uppercase text-[10px]">HEALTHY</span>
               </div>
-
               <DecisionStatus status={decision.status} />
             </CardContent>
           </Card>
-        </div>
+
+          <Card className="bg-card border-border/40 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+              <MessageSquare className="w-3.5 h-3.5 text-primary" />
+              <span className="font-semibold text-foreground">AI Chat</span>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                <p className="text-[11px] text-foreground">What is the root cause of the database connection pool exhaustion?</p>
+              </div>
+              <div className="p-3 rounded-xl bg-accent/20 border border-border/30 ml-4">
+                <p className="text-[11px] text-foreground">The database connection pool is saturated due to a memory leak in the auth service. The pool hit 998/1000 active connections, causing timeouts. Recommended action: scale pool and rollback auth service to previous version.</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur border-t p-4 flex justify-end gap-3 z-50">
-        <button
+      {/* Bottom Action Bar */}
+      <motion.div
+        variants={itemVariants}
+        className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-2xl border-t border-border/40 p-4 flex justify-end gap-3 z-50"
+      >
+        <Button
           onClick={handleRecompute}
-          className="h-9 px-3 border border-border text-slate-300 rounded text-xs cursor-pointer hover:bg-muted/30"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs cursor-pointer"
         >
-          Recompute AI Diagnosis
-        </button>
-        <button
+          <RotateCw className="w-3.5 h-3.5" />
+          Recompute Diagnosis
+        </Button>
+        <Button
           onClick={handleReject}
-          className="h-9 px-3 border border-red-500/20 text-red-400 hover:bg-red-500/5 rounded text-xs cursor-pointer font-bold"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs border-red-500/20 text-red-400 hover:bg-red-500/5 cursor-pointer"
         >
-          Reject AI Plan
-        </button>
-        <button
+          <XCircle className="w-3.5 h-3.5" />
+          Reject Plan
+        </Button>
+        <Button
           onClick={handleApprove}
           disabled={isApproving}
-          className="h-9 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs cursor-pointer font-bold disabled:opacity-50"
+          size="sm"
+          className="gap-1.5 text-xs cursor-pointer"
         >
-          Approve AI Plan
-        </button>
-      </div>
-    </div>
+          <CheckCircle className="w-3.5 h-3.5" />
+          {isApproving ? 'Approving...' : 'Approve AI Plan'}
+        </Button>
+      </motion.div>
+    </motion.div>
   );
 }
 

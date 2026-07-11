@@ -16,9 +16,15 @@ export function useRealtime() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     });
 
+    const unsubDashboard = realtimeService.subscribeToDashboardUpdate((stats) => {
+      queryClient.setQueryData(['dashboard', 'overview'], stats);
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    });
+
     return () => {
       unsubIncidents();
       unsubAgents();
+      unsubDashboard();
     };
   }, [queryClient]);
 }

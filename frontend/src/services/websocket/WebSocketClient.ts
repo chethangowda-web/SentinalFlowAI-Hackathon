@@ -42,9 +42,11 @@ export class WebSocketClient {
 
     this.ws.onmessage = (event) => {
       try {
-        const payload = JSON.parse(event.data);
-        if (payload.type === 'pong') return;
-        this.triggerEvent(payload.topic, payload.data);
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'pong') return;
+        const topic = msg.type;
+        const data = msg.payload;
+        this.triggerEvent(topic, data);
       } catch (err) {
         console.error('Failed to parse WebSocket message:', err);
       }
@@ -61,13 +63,20 @@ export class WebSocketClient {
     };
   }
 
-  public subscribe(topic: string, callback: MessageCallback) {
+  private roomRefCount: Map<string, number> = new Map();
+
+  public subscribe(topic: string, callback: MessageCallback, room?: string) {
+    const roomName = room ?? topic;
     if (!this.subscribers.has(topic)) {
       this.subscribers.set(topic, new Set());
     }
     this.subscribers.get(topic)!.add(callback);
 
-    this.send({ type: 'subscribe', topic });
+    const count = this.roomRefCount.get(roomName) ?? 0;
+    if (count === 0) {
+      this.send({ type: 'subscribe', room: roomName });
+    }
+    this.roomRefCount.set(roomName, count + 1);
 
     return () => {
       const subs = this.subscribers.get(topic);
@@ -75,8 +84,14 @@ export class WebSocketClient {
         subs.delete(callback);
         if (subs.size === 0) {
           this.subscribers.delete(topic);
-          this.send({ type: 'unsubscribe', topic });
         }
+      }
+      const newCount = (this.roomRefCount.get(roomName) ?? 1) - 1;
+      if (newCount <= 0) {
+        this.roomRefCount.delete(roomName);
+        this.send({ type: 'unsubscribe', room: roomName });
+      } else {
+        this.roomRefCount.set(roomName, newCount);
       }
     };
   }

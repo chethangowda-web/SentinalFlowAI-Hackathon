@@ -7,25 +7,25 @@ export function useDashboard() {
   const overviewQuery = useQuery({
     queryKey: ['dashboard', 'overview'],
     queryFn: () => dashboardApi.getOverviewStats(),
-    refetchInterval: 30000,
+    refetchInterval: 300000,
   });
 
   const trendsQuery = useQuery({
     queryKey: ['dashboard', 'trends'],
     queryFn: () => dashboardApi.getTrends(),
-    refetchInterval: 60000,
+    refetchInterval: 300000,
   });
 
   const severityQuery = useQuery({
     queryKey: ['dashboard', 'severity'],
     queryFn: () => dashboardApi.getSeverity(),
-    refetchInterval: 60000,
+    refetchInterval: 300000,
   });
 
   const servicesQuery = useQuery({
     queryKey: ['dashboard', 'services'],
     queryFn: () => dashboardApi.getServices(),
-    refetchInterval: 60000,
+    refetchInterval: 300000,
   });
 
   const intelligenceQuery = useQuery({
@@ -34,7 +34,7 @@ export function useDashboard() {
       const res = await apiClient.get<{ success: boolean; data: any }>('/custom/v1/intelligence/dashboard');
       return res.data.data;
     },
-    refetchInterval: 60000,
+    refetchInterval: 300000,
   });
 
   const healthQuery = useQuery<SystemHealthNode[]>({
@@ -68,7 +68,7 @@ export function useDashboard() {
         ];
       }
     },
-    refetchInterval: 30000,
+    refetchInterval: 300000,
   });
 
   const isLoading =
