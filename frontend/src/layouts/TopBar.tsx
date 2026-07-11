@@ -68,7 +68,7 @@ export function TopBar() {
       className="flex h-14 items-center justify-between border-b border-border/40 bg-background/70 backdrop-blur-2xl px-5 select-none sticky top-0 z-30 shrink-0"
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
     >
       {/* Left */}
       <div className="flex items-center gap-3 min-w-0">

@@ -23,12 +23,12 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeInOut" as const } },
 };
 
 function ScoreRing({ value, label, color, icon: Icon, subtitle }: {
   value: number; label: string; color: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; color?: string }>;
   subtitle?: string;
 }) {
   const radius = 40;
@@ -54,11 +54,11 @@ function ScoreRing({ value, label, color, icon: Icon, subtitle }: {
             strokeDashoffset={circumference}
             initial={false}
             animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <Icon className="w-5 h-5 mb-1" style={{ color }} />
+          <Icon className="w-5 h-5 mb-1" color={color} />
           <motion.span
             className="text-2xl font-bold font-mono text-foreground"
             initial={{ opacity: 0 }}

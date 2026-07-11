@@ -177,7 +177,7 @@ export function Sidebar() {
           'relative flex flex-col border-r border-border/40 bg-sidebar select-none h-screen sticky top-0 z-40 shrink-0',
         )}
         animate={{ width: sidebarCollapsed ? 64 : 240 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         {/* Brand Header */}
         <div className="flex h-14 items-center justify-between border-b border-border/40 px-3 shrink-0">
@@ -229,7 +229,7 @@ export function Sidebar() {
           >
             <motion.div
               animate={{ rotate: sidebarCollapsed ? 180 : 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               {sidebarCollapsed ? (
                 <ChevronRight className="h-4 w-4" />

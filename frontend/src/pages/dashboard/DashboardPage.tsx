@@ -40,7 +40,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeInOut" as const } },
 };
 
 function SkeletonCard() {
@@ -56,7 +56,7 @@ function SkeletonCard() {
 }
 
 function MetricCardSlim({ title, value, icon: Icon, color, trend, subtitle, onClick }: {
-  title: string; value: string | number; icon: React.ComponentType<{ className?: string }>;
+  title: string; value: string | number;   icon: React.ComponentType<{ className?: string; color?: string }>;
   color: string; trend?: string; subtitle?: string; onClick?: () => void;
 }) {
   return (
@@ -71,7 +71,7 @@ function MetricCardSlim({ title, value, icon: Icon, color, trend, subtitle, onCl
     >
       <div className="flex items-start justify-between mb-3">
         <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}15` }}>
-          <Icon className="w-4 h-4" style={{ color }} />
+          <Icon className="w-4 h-4" color={color} />
         </div>
         {trend && (
           <span className={cn(
@@ -155,7 +155,7 @@ export function DashboardPage() {
         className="flex flex-col h-[80svh] items-center justify-center space-y-5"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         <div className="relative">
           <div className="p-5 rounded-full bg-destructive/10">
