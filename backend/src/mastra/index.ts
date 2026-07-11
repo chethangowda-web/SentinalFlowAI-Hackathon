@@ -69,6 +69,7 @@ import {
 } from '../routes/lifecycleRoutes';
 import { telemetryIngestionRoute, demoStartRoute, demoStopRoute } from '../routes/telemetryRoutes';
 import { healthRoute, dependenciesHealthRoute, metricsRoute, readyHealthRoute, readyRoute, liveRoute } from '../routes/healthRoutes';
+import { landingPageRoute } from '../routes/landingPage';
 import {
   getNotificationsRoute,
   getNotificationByIdRoute,
@@ -261,6 +262,7 @@ export const mastra = new Mastra({
       credentials: true,
     },
     apiRoutes: [
+      landingPageRoute,
       registerRoute,
       loginRoute,
       logoutRoute,
