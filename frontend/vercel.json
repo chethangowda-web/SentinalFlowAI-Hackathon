@@ -1,10 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "name": "sentinelflow",
   "version": 2,
   "framework": null,
-  "buildCommand": null,
-  "outputDirectory": "frontend/dist",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "installCommand": null,
   "devCommand": null,
   "routes": [
