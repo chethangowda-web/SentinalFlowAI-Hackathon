@@ -299,44 +299,30 @@ const LANDING_PAGE_HTML = `<!DOCTYPE html>
     if (el) el.innerHTML = '<div class="skeleton" style="width:60%"></div>';
   }
   async function loadData() {
-    const health = await fetchJson(API + '/health');
-    const ready = await fetchJson(API + '/health/ready');
-    const deps = await fetchJson(API + '/health/dependencies');
-    const agents = await fetchJson(API + '/custom/v1/agents');
-    const runbooks = await fetchJson(API + '/runbooks');
-    const conf = await fetchJson(API + '/custom/v1/intelligence/confidence');
-    const overview = await fetchJson(API + '/custom/v1/dashboard/overview');
-    const metrics = await fetchJson(API + '/health/metrics');
-    const gov = await fetchJson(API + '/custom/v1/governance/overview');
+    const [health, ready, deps, metrics] = await Promise.all([
+      fetchJson(API + '/health'),
+      fetchJson(API + '/health/ready'),
+      fetchJson(API + '/health/dependencies'),
+      fetchJson(API + '/health/metrics'),
+    ]);
 
     // Overall health
-    const h = health?.status || 'unknown';
-    setStatus('overallHealth', h);
-    if (h !== 'unknown') {
-      const dot = document.querySelector('#overallHealth .status-badge .dot') || document.createElement('span');
-      const txt = h.charAt(0).toUpperCase() + h.slice(1);
-      document.getElementById('overallHealth').innerHTML = '<div class="card-value"><span class="status-badge ' + h + '"><span class="dot ' + h + '"></span>' + txt + '</span></div>';
-    }
+    const h = health?.status || (ready?.status === 'healthy' ? 'healthy' : 'unknown');
+    document.getElementById('overallHealth').innerHTML =
+      '<div class="card-value"><span class="status-badge ' + h + '"><span class="dot ' + h + '"></span>' +
+      h.charAt(0).toUpperCase() + h.slice(1) + '</span></div>';
 
-    // Env + version
-    const env = ready?.environment || ready?.env || 'development';
+    // Env + version (from ready endpoint)
+    const env = ready?.environment || ready?.env || ready?.status || 'production';
     document.getElementById('envBadge').textContent = env;
+    const ver = ready?.version || 'v1.0.0';
+    document.getElementById('versionBadge').textContent = ver;
 
-    // Agent count
-    const agentCount = agents?.length || agents?.agents?.length || 0;
-    setVal('activeAgents', agentCount, 'AI Agents operational');
-
-    // Workflows
-    const workflowCount = overview?.activeWorkflows || overview?.workflows || 0;
-    setVal('activeWorkflows', workflowCount, 'Active workflow pipelines');
-
-    // Runbooks
-    const runbookList = Array.isArray(runbooks) ? runbooks : (runbooks?.runbooks || []);
-    setVal('totalRunbooks', runbookList.length, 'Automated response runbooks');
-
-    // AI Confidence
-    const confidence = conf?.confidence || conf?.score || (conf?.average ? conf.average : null);
-    setVal('aiConfidence', confidence != null ? (confidence * 100).toFixed(0) + '%' : '--', 'Decision intelligence confidence');
+    // Auth-protected stats — show graceful fallback
+    setVal('activeAgents', '<span style="font-size:0.7rem;color:#64748b">Requires auth</span>', 'Sign in to view agents');
+    setVal('activeWorkflows', '<span style="font-size:0.7rem;color:#64748b">Requires auth</span>', 'Sign in to view workflows');
+    setVal('totalRunbooks', '<span style="font-size:0.7rem;color:#64748b">Requires auth</span>', 'Sign in to view runbooks');
+    setVal('aiConfidence', '<span style="font-size:0.7rem;color:#64748b">Requires auth</span>', 'Sign in for decision metrics');
 
     // Uptime
     const uptime = metrics?.uptime || 0;
@@ -346,23 +332,18 @@ const LANDING_PAGE_HTML = `<!DOCTYPE html>
     let uptimeStr = '';
     if (days > 0) uptimeStr += days + 'd ';
     uptimeStr += hours + 'h ' + mins + 'm';
-    setVal('uptime', uptimeStr, 'Platform uptime');
+    setVal('uptime', uptimeStr || '< 1m', 'Platform uptime');
 
-    // Service statuses
+    // Service statuses from /health/ready
     if (ready) {
       setStatus('dbStatus', ready.database || 'unknown');
       setStatus('qdrantStatus', ready.qdrant || 'offline');
       setStatus('wsStatus', ready.websocket || 'unknown');
       setStatus('groqStatus', ready.groq || 'unknown');
+      setStatus('enkryptStatus', ready.enkrypt || 'offline');
     } else if (deps) {
       setStatus('dbStatus', deps.postgres || 'unknown');
     }
-    const hasEnkrypt = (ready && 'enkrypt' in ready) || gov?.guardrails !== undefined;
-    setStatus('enkryptStatus', hasEnkrypt ? 'healthy' : 'offline');
-
-    // Version
-    const ver = ready?.version || 'v1.0.0';
-    document.getElementById('versionBadge').textContent = ver;
   }
   loadData();
   setInterval(loadData, 15000);
