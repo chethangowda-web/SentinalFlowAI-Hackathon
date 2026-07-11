@@ -11,14 +11,17 @@ export class DatabaseClient {
   private constructor() {
     this.log = new LoggerService('DatabaseClient');
 
+    const needsSSL = config.db.ssl || config.db.url?.includes('.supabase.co');
+
     console.log("DATABASE_URL =", config.db.url);
-    console.log("SSL =", config.db.ssl);
+    console.log("SSL config flag =", config.db.ssl);
+    console.log("SSL enabled (auto-detected) =", needsSSL);
     this.pool = new Pool({
       connectionString: config.db.url,
       max: config.db.poolSize,
       idleTimeoutMillis: config.db.idleTimeoutMillis,
       connectionTimeoutMillis: config.db.connectionTimeoutMillis,
-      ssl: config.db.ssl ? { rejectUnauthorized: false } : undefined,
+      ssl: needsSSL ? { rejectUnauthorized: false } : undefined,
     });
 
     this.pool.on('error', (err) => {

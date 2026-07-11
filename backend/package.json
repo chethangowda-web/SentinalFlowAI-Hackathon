@@ -16,6 +16,9 @@
   "engines": {
     "node": ">=22.13.0"
   },
+  "overrides": {
+    "undici": "^8.7.0"
+  },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.7",
     "@huggingface/inference": "^4.13.22",
@@ -34,6 +37,7 @@
     "jose": "^6.2.3",
     "node-cron": "^4.6.0",
     "pg": "^8.22.0",
+    "undici": "^8.7.0",
     "ws": "^8.21.0",
     "zod": "^4.4.3"
   },

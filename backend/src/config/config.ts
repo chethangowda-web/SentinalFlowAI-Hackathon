@@ -18,7 +18,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DB_POOL_SIZE: z.coerce.number().default(20),
   DB_IDLE_TIMEOUT: z.coerce.number().default(10000),
-  DB_CONNECTION_TIMEOUT: z.coerce.number().default(2000),
+  DB_CONNECTION_TIMEOUT: z.coerce.number().default(30000),
   DB_SSL: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
 
   PROMETHEUS_URL: z.string().optional(),
