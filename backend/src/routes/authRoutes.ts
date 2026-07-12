@@ -177,6 +177,17 @@ export const getOrganizationsRoute = registerApiRoute('/custom/v1/auth/organizat
   }
 });
 
+export const getOrganizationByIdRoute = registerApiRoute('/custom/v1/auth/organizations/:id', {
+  method: 'GET',
+  middleware: [requireAuth],
+  handler: async (c) => {
+    const orgId = c.req.param('id');
+    const org = await authRepository.getOrganizationById(orgId);
+    if (!org) return c.json({ success: false, error: 'Organization not found' }, 404);
+    return c.json({ success: true, data: org }, 200);
+  }
+});
+
 export const createOrganizationRoute = registerApiRoute('/custom/v1/auth/organizations', {
   method: 'POST',
   middleware: [requireAuth],

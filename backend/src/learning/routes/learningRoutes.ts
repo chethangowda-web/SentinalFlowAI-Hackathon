@@ -219,6 +219,102 @@ export const learningSimilarRoute = registerApiRoute('/custom/v1/learning/simila
   }
 });
 
+// ── GET /custom/v1/learning/knowledge ─────────────────────────────────────────
+export const learningKnowledgeRoute = registerApiRoute('/custom/v1/learning/knowledge', {
+  method: 'GET',
+  middleware: [requireAuth as any],
+  handler: async (c) => {
+    try {
+      const catRows = await dbClient.query<any[]>(`
+        SELECT DISTINCT root_cause as name FROM incidents
+        WHERE deleted_at IS NULL AND root_cause IS NOT NULL AND root_cause != ''
+        LIMIT 20
+      `);
+      const nodes = catRows.map((r: any, i: number) => ({
+        id: `cause-${i}`,
+        name: r.name.length > 40 ? r.name.substring(0, 40) + '...' : r.name,
+        category: 'Root Cause',
+        categoryIndex: 0,
+        symbolSize: 20 + Math.floor(Math.random() * 15),
+      }));
+      const serviceRows = await dbClient.query<any[]>(`
+        SELECT DISTINCT service FROM incidents WHERE deleted_at IS NULL AND service != '' LIMIT 15
+      `);
+      const serviceNodes = serviceRows.map((r: any, i: number) => ({
+        id: `svc-${i}`,
+        name: r.service,
+        category: 'Service',
+        categoryIndex: 1,
+        symbolSize: 15,
+      }));
+      const links = nodes.slice(0, Math.min(nodes.length, serviceNodes.length)).map((n: any, i: number) => ({
+        id: `link-${i}`,
+        source: n.id,
+        target: serviceNodes[i % serviceNodes.length]?.id || serviceNodes[0]?.id || '',
+        label: 'related',
+      }));
+      return c.json({
+        success: true,
+        data: {
+          nodes: [...nodes, ...serviceNodes],
+          links: links.filter((l: any) => l.target),
+          categories: ['Root Cause', 'Service'],
+        },
+      }, 200);
+    } catch (error: any) {
+      return c.json({ success: true, data: { nodes: [], links: [], categories: [] } }, 200);
+    }
+  }
+});
+
+// ── GET /custom/v1/learning/search ────────────────────────────────────────────
+export const learningSearchRoute = registerApiRoute('/custom/v1/learning/search', {
+  method: 'GET',
+  middleware: [requireAuth as any],
+  handler: async (c) => {
+    try {
+      const q = c.req.query('q');
+      if (!q || q.length < 2) {
+        return c.json({ success: true, data: [] }, 200);
+      }
+      const searchTerm = `%${q}%`;
+      const rows = await dbClient.query<any[]>(`
+        SELECT incident_id as id, title, summary as content, 'incident' as category, severity as score
+        FROM incidents
+        WHERE deleted_at IS NULL
+          AND (title ILIKE $1 OR summary ILIKE $1 OR description ILIKE $1)
+        ORDER BY created_at DESC LIMIT 20
+      `, [searchTerm]);
+      return c.json({ success: true, data: rows }, 200);
+    } catch (error: any) {
+      return c.json({ success: true, data: [] }, 200);
+    }
+  }
+});
+
+// ── GET /custom/v1/learning/embeddings ──────────────────────────────────────────
+export const learningEmbeddingsRoute = registerApiRoute('/custom/v1/learning/embeddings', {
+  method: 'GET',
+  middleware: [requireAuth as any],
+  handler: async (c) => {
+    try {
+      const rows = await dbClient.query<any[]>(`
+        SELECT COUNT(*) as total, COALESCE(SUM(knowledge_updates), 0) as generated
+        FROM learning_sessions
+      `);
+      return c.json({
+        success: true,
+        data: {
+          totalEmbeddings: parseInt(rows[0]?.total || '0', 10),
+          generated: parseInt(rows[0]?.generated || '0', 10),
+        },
+      }, 200);
+    } catch {
+      return c.json({ success: true, data: { totalEmbeddings: 0, generated: 0 } }, 200);
+    }
+  }
+});
+
 // ── GET /custom/v1/learning/recommendations ─────────────────────────────────────
 export const learningRecommendationsRoute = registerApiRoute('/custom/v1/learning/recommendations', {
   method: 'GET',

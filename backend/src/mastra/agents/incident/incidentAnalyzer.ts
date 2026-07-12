@@ -19,7 +19,7 @@ export const incidentAnalysisSchema = z.object({
   relatedTechnologies: z.array(z.string()),
 });
 
-export const incidentAnalyzer = new Agent<string, any, any>({
+export const incidentAnalyzer = new Agent({
   id: 'incident-analyzer',
   name: 'Incident Analyzer',
   instructions: `You are SentinelFlow AI, an expert Senior Site Reliability Engineer (SRE) and Incident Response Specialist.

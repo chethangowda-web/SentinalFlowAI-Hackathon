@@ -10,15 +10,11 @@
     "resolveJsonModule": true
   },
   "include": [
-    "src/realtime/**/*.ts",
-    "src/routes/realtimeRoutes.ts",
-    "src/config/config.ts",
-    "src/types/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    ".mastra",
-    "src/mastra/index.ts"
+    ".mastra"
   ]
 }

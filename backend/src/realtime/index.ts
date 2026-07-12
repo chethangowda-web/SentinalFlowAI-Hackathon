@@ -1,4 +1,3 @@
-import { RealtimeEventPublisher } from './events/RealtimeEventPublisher';
 import { eventRegistry } from '../events/EventRegistry';
 
 let realtimeInitialized = false;
@@ -10,34 +9,11 @@ export async function initializeRealtime(): Promise<void> {
   }
   realtimeInitialized = true;
 
-  // 1. Manually register RealtimeEventPublisher to all event types
-  const publisher = new RealtimeEventPublisher();
-  const eventTypes = [
-    'IncidentCreated',
-    'IncidentUpdated',
-    'IncidentAssigned',
-    'IncidentStatusChanged',
-    'IncidentResolved',
-    'IncidentClosed',
-    'IncidentDeleted',
-    'TimelineEventCreated',
-    'NoteCreated',
-    'NotificationRequested',
-    'RunbookTriggered',
-    'RunbookExecutionCompleted',
-    'RunbookExecutionFailed',
-    'TelemetryReceived',
-    'AnomalyDetected',
-    'IncidentAnalysisCompleted',
-    'HealthCheckFailed',
-    'JobCompleted',
-    'DashboardStatisticsUpdated',
-  ];
+  // Handlers are registered via @EventHandler decorators.
+  // The RealtimeEventPublisher decorators auto-register during
+  // initializeEventBus() -> eventRegistry.discoverDecoratedHandlers().
+  // No manual registration needed here.
 
-  for (const eventType of eventTypes) {
-    eventRegistry.register(eventType, publisher);
-  }
-
-  // 2. WebSocket Gateway will be auto-attached to the Mastra HTTP server
-  //    via monkey-patched http.createServer in mastra/index.ts
+  // WebSocket Gateway will be auto-attached to the Mastra HTTP server
+  // via monkey-patched http.createServer in mastra/index.ts
 }

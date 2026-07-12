@@ -56,7 +56,6 @@ export function useDashboard() {
     queryFn: async (): Promise<SystemHealthNode[]> => {
       try {
         interface ReadinessReport {
-          status: string;
           database: string;
           eventBus: string;
           groq: string;
@@ -66,12 +65,12 @@ export function useDashboard() {
         }
         const res = await apiClient.get<ReadinessReport>('/health/ready');
         const r = res.data;
-        const ok = (v: string) => v === 'healthy' ? 'OK' : 'ERROR';
+        const ok = (v: string | undefined) => v === 'healthy' ? 'OK' : 'ERROR';
         return [
-          { name: 'Postgres DB', status: ok(r.database), usagePercentage: undefined },
-          { name: 'Qdrant Vector Cluster', status: (r.qdrant === 'healthy' ? 'OK' : 'ERROR') as 'OK' | 'ERROR', usagePercentage: undefined },
-          { name: 'Groq AI', status: ok(r.groq), usagePercentage: undefined },
-          { name: 'WebSocket', status: ok(r.websocket), usagePercentage: undefined },
+          { name: 'Postgres DB', status: ok((r as any).database), usagePercentage: undefined },
+          { name: 'Qdrant Vector Cluster', status: ok((r as any).qdrant), usagePercentage: undefined },
+          { name: 'Groq AI', status: ok((r as any).groq), usagePercentage: undefined },
+          { name: 'WebSocket', status: ok((r as any).websocket), usagePercentage: undefined },
         ];
       } catch {
         return [

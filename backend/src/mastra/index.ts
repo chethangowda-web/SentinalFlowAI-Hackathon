@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import http from 'http';
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
@@ -37,6 +38,7 @@ import {
   getSessionsRoute,
   revokeSessionRoute,
   getOrganizationsRoute,
+  getOrganizationByIdRoute,
   createOrganizationRoute,
   getTeamsRoute,
   createTeamRoute,
@@ -128,7 +130,10 @@ import {
   learningFeedbackRoute,
   learningRetrainRoute,
   learningReindexRoute,
-  learningRecommendationsRoute
+  learningRecommendationsRoute,
+  learningOverviewRoute,
+  learningGrowthRoute,
+  learningSimilarRoute
 } from '../learning/routes/learningRoutes';
 import { learningEventSubscriber } from '../learning/events/LearningEventSubscriber';
 import {
@@ -147,11 +152,6 @@ import {
   governanceAuditRoute,
   governanceMetricsRoute
 } from '../governance/routes/governanceRoutes';
-import {
-  learningOverviewRoute,
-  learningGrowthRoute,
-  learningSimilarRoute
-} from '../learning/routes/learningRoutes';
 import { qdrantMemory } from './services/qdrantMemory';
 import { demoService } from './services/DemoService';
 import { dbClient } from '../database/client/DatabaseClient';
@@ -183,6 +183,10 @@ platformLifecycle.bootstrap().then(async () => {
   } catch (err: any) {
     console.error('[PlatformLifecycle] Failed to check and auto-start Demo Mode:', err.message);
   }
+  // Start WebSocket gateway on its own port (WS_PORT)
+  webSocketGateway.start().catch((err: any) => {
+    console.error('[WebSocket] Failed to start WebSocket gateway:', err);
+  });
 }).catch(err => {
   console.error('[Mastra] Platform Operations bootstrap failed:', err);
 });
@@ -210,7 +214,7 @@ const agentList = [
   { id: 'alert-correlation', name: 'Alert Correlation', model: 'groq/llama-3.1-8b' },
   { id: 'security-compliance', name: 'Security Compliance', model: 'static-analysis' },
   { id: 'learning-agent', name: 'Learning Agent', model: 'groq/llama-3.1-8b' },
-  { id: 'enkrypt-governance', name: 'Enkrypt Governance', model: 'governance-firewall' },
+  { id: 'enkrypt-ai-governance', name: 'Enkrypt AI Governance', model: 'governance-firewall' },
   { id: 'notification-agent', name: 'Notification Agent', model: 'slack/teams/email' },
 ];
 agentList.forEach(a => registerAgent(a.id, a.name, a.model));
@@ -218,11 +222,13 @@ agentList.forEach(a => registerAgent(a.id, a.name, a.model));
 // Global Error Handling
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught Exception:', err);
-  // Optional: send to telemetry or alerting
+  // Exit with failure - process manager will restart
+  process.exitCode = 1;
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exitCode = 1;
 });
 
 // Graceful shutdown is handled by PlatformLifecycle (SIGINT/SIGTERM)
@@ -243,7 +249,8 @@ export const mastra = new Mastra({
     alertCorrelation,
     securityCompliance,
     learningAgent,
-      notificationAgent,
+    notificationAgent,
+    enkryptAiGovernance,
   },
   server: {
     cors: {
@@ -270,6 +277,7 @@ export const mastra = new Mastra({
       getSessionsRoute,
       revokeSessionRoute,
       getOrganizationsRoute,
+      getOrganizationByIdRoute,
       createOrganizationRoute,
       getTeamsRoute,
       createTeamRoute,
@@ -407,3 +415,13 @@ try {
     console.warn('[Mastra] Embedding provider not registered: unknown error');
   }
 }
+
+// ---------------------------------------------------------------------------
+// Ensure WebSocket gateway is started.
+// In dev mode the monkey-patch at the top of this file may have already
+// attached it to Mastra's HTTP server.  In production mode we start it
+// on the configured WS_PORT as a standalone server.
+// ---------------------------------------------------------------------------
+webSocketGateway.start().catch((err: any) => {
+  console.error(`[Mastra] WebSocket gateway start failed: ${err}`);
+});

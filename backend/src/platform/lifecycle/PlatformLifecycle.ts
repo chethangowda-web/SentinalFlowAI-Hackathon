@@ -111,7 +111,7 @@ export class PlatformLifecycle {
 
     // Teardown db pool
     try {
-      await dbClient.end();
+      await dbClient.close();
       this.log.info('[PlatformLifecycle] Database connection pool ended successfully.');
     } catch (err: any) {
       this.log.error(`[PlatformLifecycle] Failed to end database connection pool: ${err.message}`);

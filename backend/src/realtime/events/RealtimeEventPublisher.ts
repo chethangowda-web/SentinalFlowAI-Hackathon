@@ -15,15 +15,30 @@ import { LoggerService } from '../../mastra/services/loggerService';
 @EventHandler('TimelineEventCreated')
 @EventHandler('NoteCreated')
 @EventHandler('NotificationRequested')
+@EventHandler('NotificationCreated')
+@EventHandler('NotificationSent')
 @EventHandler('RunbookTriggered')
 @EventHandler('RunbookExecutionCompleted')
 @EventHandler('RunbookExecutionFailed')
+@EventHandler('RunbookExecuted')
 @EventHandler('TelemetryReceived')
 @EventHandler('AnomalyDetected')
 @EventHandler('IncidentAnalysisCompleted')
 @EventHandler('HealthCheckFailed')
 @EventHandler('JobCompleted')
 @EventHandler('DashboardStatisticsUpdated')
+@EventHandler('DashboardUpdated')
+@EventHandler('DashboardMetricsUpdated')
+@EventHandler('AgentStarted')
+@EventHandler('AgentCompleted')
+@EventHandler('AgentFailed')
+@EventHandler('WorkflowStarted')
+@EventHandler('WorkflowCompleted')
+@EventHandler('WorkflowFailed')
+@EventHandler('GovernanceUpdated')
+@EventHandler('GovernanceBlocked')
+@EventHandler('LearningUpdated')
+@EventHandler('LearningAccuracyUpdated')
 export class RealtimeEventPublisher implements IEventHandler {
   private log = new LoggerService('RealtimeEventPublisher');
 
@@ -134,9 +149,21 @@ export class RealtimeEventPublisher implements IEventHandler {
       'RunbookTriggered',
       'RunbookExecutionCompleted',
       'RunbookExecutionFailed',
+      'RunbookExecuted',
       'JobCompleted',
       'HealthCheckFailed',
       'DashboardStatisticsUpdated',
+      'DashboardUpdated',
+      'AgentStarted',
+      'AgentCompleted',
+      'AgentFailed',
+      'WorkflowStarted',
+      'WorkflowCompleted',
+      'WorkflowFailed',
+      'GovernanceUpdated',
+      'LearningUpdated',
+      'NotificationCreated',
+      'NotificationSent',
     ];
     return dashboardTriggerEvents.includes(eventType);
   }

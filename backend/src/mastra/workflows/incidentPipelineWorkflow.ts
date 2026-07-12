@@ -52,7 +52,8 @@ function parseAgentResponse(text: string, object?: any): any {
 
 /**
  * Wrapper to execute an LLM agent call with Enkrypt AI governance
- * Scans prompt before LLM and response after LLM
+ * Scans prompt before LLM and response after LLM.
+ * Publishes AgentStarted/AgentCompleted/AgentFailed WebSocket events.
  */
 async function executeAgentWithGovernance(
   incidentId: string,
@@ -60,6 +61,16 @@ async function executeAgentWithGovernance(
   prompt: string,
   agentGenerate: () => Promise<{ text: string; object?: any }>
 ): Promise<{ text: string; object?: any }> {
+  const startTime = Date.now();
+
+  eventPublisher.publish(
+    'AgentStarted',
+    incidentId,
+    'Incident',
+    { incidentId, agentName, timestamp: new Date().toISOString() },
+    { incidentId }
+  );
+
   const guardResult = await enkryptMiddleware.wrapAgentCall(
     incidentId,
     agentName,
@@ -68,10 +79,27 @@ async function executeAgentWithGovernance(
     (r) => r.text
   );
 
+  const durationMs = Date.now() - startTime;
+
   if (guardResult.blocked) {
     console.warn(`[Enkrypt] Agent ${agentName} blocked: ${guardResult.blockedReason}`);
+    eventPublisher.publish(
+      'AgentFailed',
+      incidentId,
+      'Incident',
+      { incidentId, agentName, reason: guardResult.blockedReason, durationMs, timestamp: new Date().toISOString() },
+      { incidentId }
+    );
     throw new Error(`Enkrypt AI blocked ${agentName}: ${guardResult.blockedReason}`);
   }
+
+  eventPublisher.publish(
+    'AgentCompleted',
+    incidentId,
+    'Incident',
+    { incidentId, agentName, durationMs, timestamp: new Date().toISOString() },
+    { incidentId }
+  );
 
   return guardResult.result!;
 }
@@ -887,6 +915,21 @@ const runEnkryptAiGovernanceStep = createStep({
       historicalSimilarity
     );
 
+    eventPublisher.publish(
+      'GovernanceUpdated',
+      inputData.incidentId,
+      'Incident',
+      {
+        incidentId: inputData.incidentId,
+        decision: governanceReport?.decision,
+        riskScore: governanceReport?.riskScore,
+        trustScore: governanceReport?.trustScore,
+        threatLevel: governanceReport?.threatLevel,
+        timestamp: new Date().toISOString(),
+      },
+      { incidentId: inputData.incidentId }
+    );
+
     return {
       enkryptAiGovernance: governanceReport,
       aggregatedConfidence,
@@ -993,6 +1036,20 @@ const runLearningAgentStep = createStep({
 
     const learningReport = await executeLearningAgentProgrammatically(
       `Incident summary: ${summary}. Service: ${inputData.service}. Root Cause: ${rootCause}. Confidence: ${inputData.aggregatedConfidence?.overallConfidence || 'N/A'}`
+    );
+
+    eventPublisher.publish(
+      'LearningUpdated',
+      inputData.incidentId,
+      'Incident',
+      {
+        incidentId: inputData.incidentId,
+        summary,
+        rootCause,
+        confidence: inputData.aggregatedConfidence?.overallConfidence,
+        timestamp: new Date().toISOString(),
+      },
+      { incidentId: inputData.incidentId }
     );
 
     return { learningReport };

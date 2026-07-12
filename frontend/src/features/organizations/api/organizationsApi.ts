@@ -18,19 +18,18 @@ export interface OrganizationDetail extends Organization {
 
 export const organizationsApi = {
   listOrganizations: async (): Promise<OrganizationDetail[]> => {
-    const res = await apiClient.get<{ success: boolean; data: OrganizationDetail[] }>('/custom/v1/auth/organizations');
-    return res.data.data;
+    const res = await apiClient.get<{ organizations: OrganizationDetail[] }>('/custom/v1/auth/organizations');
+    return res.data.organizations || [];
   },
 
-  getOrganization: async (orgId: string): Promise<OrganizationDetail> => {
+  getOrganization: async (orgId: string): Promise<OrganizationDetail | null> => {
     const res = await apiClient.get<{ success: boolean; data: OrganizationDetail }>(`/custom/v1/auth/organizations/${orgId}`);
-    return res.data.data;
+    return res.data.data || null;
   },
 
   listMembers: async (orgId?: string): Promise<OrganizationMember[]> => {
-    const url = orgId ? `/custom/v1/auth/organizations/${orgId}/members` : '/custom/v1/auth/teams';
-    const res = await apiClient.get<{ success: boolean; data: OrganizationMember[] }>(url);
-    return res.data.data;
+    const res = await apiClient.get<{ teams: OrganizationMember[] }>('/custom/v1/auth/teams');
+    return res.data.teams || [];
   },
 };
 

@@ -104,24 +104,46 @@ public async initialize(): Promise<void> {
   /**
    * Idempotent, concurrency-safe initialisation.
    * Multiple concurrent callers share the same Promise.
-   * If initialisation fails, the next call will retry.
+   * If initialisation fails, uses retry with backoff and exponential delay.
+   * Only falls back to degraded mode after all retries are exhausted.
    */
   public async ensureInitialized(): Promise<void> {
     if (this.client && !this.degraded) {
       return;
     }
     if (!this.initPromise) {
-      this.initPromise = this.initialize()
+      this.initPromise = this.initializeWithRetry()
         .then(() => {
           this.degraded = false;
         })
         .catch((err) => {
           this.degraded = true;
           this.initPromise = null; // Allow retry on next call
-          console.warn(`[QdrantMemory] ensureInitialized failed (falling back to degraded mode): ${err.message}`);
+          console.error(`[QdrantMemory] All initialization retries exhausted. Falling back to degraded mode: ${err.message}`);
         });
     }
     return this.initPromise;
+  }
+
+  private async initializeWithRetry(): Promise<void> {
+    const maxAttempts = 3;
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await this.initialize();
+        return;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (attempt < maxAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+          console.warn(`[QdrantMemory] Initialization attempt ${attempt}/${maxAttempts} failed. Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError || new Error('Qdrant initialization failed after all retries');
   }
 
   public isDegraded(): boolean {

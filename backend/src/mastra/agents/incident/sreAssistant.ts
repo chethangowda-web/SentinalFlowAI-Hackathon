@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 
 export const sreAssistant = new Agent({
+  id: 'sre-assistant',
   name: 'SRE Assistant',
   instructions: `You are the SentinelFlow Autonomous AI SRE Assistant.
 Your job is to help users investigate incidents, understand AI decisions, suggest runbooks, and query historical knowledge.

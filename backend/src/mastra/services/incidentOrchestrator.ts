@@ -107,7 +107,25 @@ export class IncidentOrchestrator {
     }
 
     // ---------------------------------------------------------------------
-    // 2. Execute the workflow
+    // 2. Publish workflow started event
+    // ---------------------------------------------------------------------
+
+    eventPublisher.publish(
+      'WorkflowStarted',
+      incidentId,
+      'IncidentPipeline',
+      {
+        incidentId,
+        workflowId: 'IncidentPipelineWorkflow',
+        service: input.service,
+        environment: input.environment,
+        timestamp: new Date().toISOString(),
+      },
+      { incidentId, traceId: context.traceId }
+    );
+
+    // ---------------------------------------------------------------------
+    // 3. Execute the workflow
     // ---------------------------------------------------------------------
 
     try {
@@ -213,6 +231,21 @@ export class IncidentOrchestrator {
       );
 
       const durationMs = Math.round(performance.now() - startTime);
+
+      eventPublisher.publish(
+        'WorkflowCompleted',
+        incidentId,
+        'IncidentPipeline',
+        {
+          incidentId,
+          workflowId: 'IncidentPipelineWorkflow',
+          status: report.status,
+          confidence: report.aggregatedConfidence?.overallConfidence,
+          durationMs,
+          timestamp: new Date().toISOString(),
+        },
+        { incidentId, traceId: context.traceId }
+      );
 
       log.info(`[${incidentId}] Analysis complete — status: ${report.status} — total: ${(durationMs / 1000).toFixed(2)}s`);
 

@@ -51,10 +51,11 @@ CREATE TABLE IF NOT EXISTS agent_templates (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS ai_governance_logs (
+CREATE TABLE IF NOT EXISTS workflow_governance_logs (
   id UUID PRIMARY KEY,
   action_type VARCHAR(100) NOT NULL,
   entity_id UUID,
   details JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+

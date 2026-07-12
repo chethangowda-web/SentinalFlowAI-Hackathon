@@ -15,7 +15,7 @@ export const anomalyDetectionSchema = z.object({
   counterEvidence: z.array(z.string()),
 });
 
-export const anomalyDetector = new Agent<string, any, any>({
+export const anomalyDetector = new Agent({
   id: 'anomaly-detector',
   name: 'Anomaly Detector',
   instructions: `You are SentinelFlow AI, an expert Site Reliability Engineer (SRE), Security Engineer, and Infrastructure Monitoring Specialist.
