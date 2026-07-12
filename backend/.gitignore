@@ -10,3 +10,5 @@ dist
 .vercel 
 *.duckdb 
 *.duckdb.wal 
+scratch/
+src/scripts/inspect-db.ts

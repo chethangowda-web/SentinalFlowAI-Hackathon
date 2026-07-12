@@ -368,6 +368,13 @@ export class AuthRepository implements IAuthRepository, IOrganizationRepository,
   }
 
   // --- Mappers ---
+  public async listOrganizationUsers(orgId: string): Promise<any[]> {
+    const text = `SELECT user_id as id, email, full_name as name, role, status, created_at as "lastActiveAt"
+                  FROM users WHERE organization_id = $1 ORDER BY full_name ASC`;
+    const rows = await this.db.query(text, [orgId]);
+    return rows;
+  }
+
   private mapToUser(r: any): User {
     return {
       userId: r.user_id,

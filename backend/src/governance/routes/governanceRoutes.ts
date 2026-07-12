@@ -31,7 +31,7 @@ async function queryOverview() {
       toxicityFlags: 0,
       policyViolations: 0,
       safetyScore: Math.round(s.avg_safety_score || 0),
-      totalDecisions: parseInt(s.total_decimals || '0', 10),
+      totalDecisions: parseInt(s.total_decisions || '0', 10),
       blockedResponses: parseInt(s.blocked_count || '0', 10),
       approvedResponses: parseInt(s.approved_count || '0', 10),
       threatsThisWeek: parseInt((threatsRes.rows[0]?.count || '0'), 10),

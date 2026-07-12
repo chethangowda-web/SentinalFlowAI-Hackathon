@@ -42,6 +42,8 @@ import {
   createOrganizationRoute,
   getTeamsRoute,
   createTeamRoute,
+  listMembersRoute,
+  listOrgMembersRoute,
   refreshRoute,
   forgotPasswordRoute,
   resetPasswordRoute,
@@ -133,7 +135,10 @@ import {
   learningRecommendationsRoute,
   learningOverviewRoute,
   learningGrowthRoute,
-  learningSimilarRoute
+  learningSimilarRoute,
+  learningKnowledgeRoute,
+  learningSearchRoute,
+  learningEmbeddingsRoute
 } from '../learning/routes/learningRoutes';
 import { learningEventSubscriber } from '../learning/events/LearningEventSubscriber';
 import {
@@ -282,6 +287,8 @@ export const mastra = new Mastra({
       createOrganizationRoute,
       getTeamsRoute,
       createTeamRoute,
+      listMembersRoute,
+      listOrgMembersRoute,
       refreshRoute,
       forgotPasswordRoute,
       resetPasswordRoute,
@@ -374,7 +381,10 @@ export const mastra = new Mastra({
       learningRecommendationsRoute,
       learningOverviewRoute,
       learningGrowthRoute,
-      learningSimilarRoute
+      learningSimilarRoute,
+      learningKnowledgeRoute,
+      learningSearchRoute,
+      learningEmbeddingsRoute
     ],
   },
   storage: new LibSQLStore({

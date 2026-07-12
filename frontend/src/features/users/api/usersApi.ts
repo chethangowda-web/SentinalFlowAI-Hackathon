@@ -14,9 +14,8 @@ export interface TeamMember {
 
 export const usersApi = {
   listMembers: async (orgId?: string): Promise<TeamMember[]> => {
-    const url = orgId ? `/custom/v1/auth/organizations/${orgId}/members` : '/custom/v1/auth/teams';
-    const res = await apiClient.get<{ success: boolean; data: TeamMember[] }>(url);
-    return res.data.data;
+    const res = await apiClient.get<{ success: boolean; data: TeamMember[] }>('/custom/v1/auth/members');
+    return res.data.data ?? [];
   },
 };
 

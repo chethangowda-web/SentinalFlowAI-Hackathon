@@ -238,7 +238,27 @@ export const getTeamsRoute = registerApiRoute('/custom/v1/auth/teams', {
   handler: async (c) => {
     const orgId = c.get('organizationId');
     const teams = await authRepository.listTeams(orgId);
-    return c.json({ teams }, 200);
+    return c.json({ success: true, data: teams }, 200);
+  }
+});
+
+export const listOrgMembersRoute = registerApiRoute('/custom/v1/auth/organizations/:orgId/members', {
+  method: 'GET',
+  middleware: [requireAuth],
+  handler: async (c) => {
+    const orgId = c.req.param('orgId');
+    const members = await authRepository.listOrganizationUsers(orgId);
+    return c.json({ success: true, data: members }, 200);
+  }
+});
+
+export const listMembersRoute = registerApiRoute('/custom/v1/auth/members', {
+  method: 'GET',
+  middleware: [requireAuth, requireOrganization],
+  handler: async (c) => {
+    const orgId = c.get('organizationId');
+    const members = await authRepository.listOrganizationUsers(orgId);
+    return c.json({ success: true, data: members }, 200);
   }
 });
 

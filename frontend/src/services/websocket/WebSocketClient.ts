@@ -2,11 +2,34 @@ import { useAuthStore } from "@/store/authStore";
 
 type MessageCallback = (data: any) => void;
 
+const EVENT_TOPIC_MAP: Record<string, string[]> = {
+  IncidentCreated: ['incidents'],
+  IncidentUpdated: ['incidents'],
+  IncidentStatusChanged: ['incidents'],
+  IncidentAssigned: ['incidents'],
+  IncidentResolved: ['incidents'],
+  IncidentClosed: ['incidents'],
+  IncidentDeleted: ['incidents'],
+  IncidentAnalysisCompleted: ['incidents'],
+  AgentStarted: ['agents'],
+  AgentCompleted: ['agents'],
+  AgentFailed: ['agents'],
+  WorkflowStarted: ['agents'],
+  WorkflowCompleted: ['agents'],
+  WorkflowFailed: ['agents'],
+  GovernanceUpdated: ['governance'],
+  LearningUpdated: ['learning'],
+  NotificationCreated: ['notifications'],
+  DashboardStatisticsUpdated: ['dashboard'],
+  DashboardUpdated: ['dashboard'],
+};
+
 export class WebSocketClient {
   private static instance: WebSocketClient | null = null;
   private ws: WebSocket | null = null;
   private url: string;
   private subscribers: Map<string, Set<MessageCallback>> = new Map();
+  private allSubscribers: Set<MessageCallback> = new Set();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 20;
   private reconnectInterval = 1000;
@@ -102,11 +125,28 @@ export class WebSocketClient {
     }
   }
 
+  public subscribeAll(callback: MessageCallback) {
+    this.allSubscribers.add(callback);
+    return () => {
+      this.allSubscribers.delete(callback);
+    };
+  }
+
   private triggerEvent(topic: string, data: any) {
     const subs = this.subscribers.get(topic);
     if (subs) {
       subs.forEach((cb) => cb(data));
     }
+    const mappedTopics = EVENT_TOPIC_MAP[topic];
+    if (mappedTopics) {
+      for (const mappedTopic of mappedTopics) {
+        const mappedSubs = this.subscribers.get(mappedTopic);
+        if (mappedSubs) {
+          mappedSubs.forEach((cb) => cb(data));
+        }
+      }
+    }
+    this.allSubscribers.forEach((cb) => cb({ type: topic, payload: data }));
   }
 
   private attemptReconnect() {
