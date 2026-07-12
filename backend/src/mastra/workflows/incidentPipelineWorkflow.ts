@@ -24,6 +24,7 @@ import { timelineGenerator } from '../../intelligence/services/timelineGenerator
 import { costImpactEstimator } from '../../intelligence/services/CostImpactEstimator';
 import { enkryptMiddleware } from '../../security/EnkryptMiddleware';
 import { enkryptService } from '../../security/EnkryptService';
+import { recordAgentExecution } from '../../agents/routes/agentsRoutes';
 
 function parseAgentResponse(text: string, object?: any): any {
   if (object) return object;
@@ -83,6 +84,7 @@ async function executeAgentWithGovernance(
 
   if (guardResult.blocked) {
     console.warn(`[Enkrypt] Agent ${agentName} blocked: ${guardResult.blockedReason}`);
+    recordAgentExecution(agentName, false, durationMs);
     eventPublisher.publish(
       'AgentFailed',
       incidentId,
@@ -93,6 +95,7 @@ async function executeAgentWithGovernance(
     throw new Error(`Enkrypt AI blocked ${agentName}: ${guardResult.blockedReason}`);
   }
 
+  recordAgentExecution(agentName, true, durationMs);
   eventPublisher.publish(
     'AgentCompleted',
     incidentId,
@@ -385,6 +388,7 @@ const infrastructureMonitoringStep = createStep({
 
     logStep(inputData.incidentId, 'InfrastructureMonitoringStep');
     const result = await executeInfrastructureMonitoringProgrammatically(inputData.service);
+    recordAgentExecution('infra-monitoring', true, 0);
     return { infrastructureMonitoring: result };
   },
 });
@@ -421,6 +425,7 @@ const kubernetesOperationsStep = createStep({
 
     logStep(inputData.incidentId, 'KubernetesOperationsStep');
     const result = await executeKubernetesOperationsProgrammatically(inputData.service, 'default');
+    recordAgentExecution('kubernetes-ops', true, 0);
     return { kubernetesOperations: result };
   },
 });
@@ -457,6 +462,7 @@ const securityComplianceStep = createStep({
 
     logStep(inputData.incidentId, 'SecurityComplianceStep');
     const result = await executeSecurityComplianceProgrammatically(inputData.context.telemetryLogs, 'kubernetes');
+    recordAgentExecution('security-compliance', true, 0);
     return { securityCompliance: result };
   },
 });
@@ -495,6 +501,7 @@ const alertCorrelationStep = createStep({
     logStep(inputData.incidentId, 'AlertCorrelationStep');
 
     const alertCorr = await executeAlertCorrelationProgrammatically(inputData.service, inputData.context.telemetryLogs);
+    recordAgentExecution('alert-correlation', true, 0);
 
     const deploymentCorrelation = routing?.deploymentCorrelation || {
       recentDeploymentFound: false,

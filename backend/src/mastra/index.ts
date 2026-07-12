@@ -173,11 +173,12 @@ platformLifecycle.bootstrap().then(async () => {
   }
   workerManager.start();
 
-  // Check if DB is empty, if so, trigger Demo Mode
+  // Auto-start demo mode in development or when DB is empty
   try {
     const incidents = await dbClient.query('SELECT 1 FROM incidents LIMIT 1');
-    if (incidents.length === 0 && process.env.SKIP_DEMO_AUTO_START !== 'true') {
-      console.log('[PlatformLifecycle] DB has no incidents. Starting Demo Mode simulation...');
+    const isDev = config.server.env === 'development';
+    if (process.env.SKIP_DEMO_AUTO_START !== 'true' && (incidents.length === 0 || isDev)) {
+      console.log(`[PlatformLifecycle] Starting Demo Mode simulation (env=${config.server.env}, dbEmpty=${incidents.length === 0})...`);
       demoService.startDemoMode();
     }
   } catch (err: any) {
