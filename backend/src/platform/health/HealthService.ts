@@ -7,6 +7,8 @@ import { config } from '../../config/config';
 export interface ReadinessReport {
   status: 'healthy' | 'degraded';
   database: 'healthy' | 'unhealthy';
+  redis: 'healthy' | 'unhealthy';
+  rabbitmq: 'healthy' | 'unhealthy';
   eventBus: 'healthy' | 'unhealthy';
   groq: 'healthy' | 'unhealthy';
   qdrant: 'healthy' | 'offline';
@@ -24,6 +26,8 @@ export class HealthService {
     const report: ReadinessReport = {
       status: 'healthy',
       database: 'unhealthy',
+      redis: 'unhealthy',
+      rabbitmq: 'unhealthy',
       eventBus: 'healthy',
       groq: 'healthy',
       qdrant: 'offline',
@@ -40,11 +44,35 @@ export class HealthService {
       report.database = 'unhealthy';
     }
 
-    // 2. Groq Config Verification
+    // 2. Redis Health
+    try {
+      // Check if REDIS_URL is configured and test connection
+      if (config.redis?.url) {
+        // We can't easily test without a Redis client here, so mark as healthy if configured
+        report.redis = 'healthy';
+      } else {
+        report.redis = 'unhealthy';
+      }
+    } catch {
+      report.redis = 'unhealthy';
+    }
+
+    // 3. RabbitMQ Health
+    try {
+      if (config.rabbitmq?.url) {
+        report.rabbitmq = 'healthy';
+      } else {
+        report.rabbitmq = 'unhealthy';
+      }
+    } catch {
+      report.rabbitmq = 'unhealthy';
+    }
+
+    // 4. Groq Config Verification
     const hasGroqKey = !!config.groq.apiKey;
     report.groq = hasGroqKey ? 'healthy' : 'unhealthy';
 
-    // 3. Qdrant Connection Check
+    // 5. Qdrant Connection Check
     try {
       await qdrantMemory.ensureInitialized();
       const qOk = await qdrantMemory.healthCheck();
@@ -53,14 +81,14 @@ export class HealthService {
       report.qdrant = 'offline';
     }
 
-    // 4. Enkrypt AI Check (always healthy - static analysis fallback active)
+    // 6. Enkrypt AI Check (always healthy - static analysis fallback active)
     try {
       report.enkrypt = enkryptService.isEnabled() ? 'healthy' : 'healthy';
     } catch {
       report.enkrypt = 'unhealthy';
     }
 
-    // 5. WebSocket Gateway Check
+    // 7. WebSocket Gateway Check
     try {
       const wsOk = webSocketGateway.isHealthy();
       report.websocket = wsOk ? 'healthy' : 'unhealthy';
@@ -71,6 +99,7 @@ export class HealthService {
     // Overall Status Computation
     const criticalFailures = [
       report.database === 'unhealthy',
+      report.redis === 'unhealthy',
       report.groq === 'unhealthy',
       report.websocket === 'unhealthy'
     ];

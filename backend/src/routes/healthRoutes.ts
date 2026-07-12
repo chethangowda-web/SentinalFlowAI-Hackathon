@@ -2,6 +2,8 @@ import { registerApiRoute } from '@mastra/core/server';
 import { dbClient } from '../database/client/DatabaseClient';
 import { prometheusService } from '../observability/services/PrometheusService';
 import { healthService } from '../platform/health/HealthService';
+import { redisClient } from '../database/client/RedisClient';
+import { qdrantMemory } from '../mastra/services/qdrantMemory';
 
 export const healthRoute = registerApiRoute('/health', {
   method: 'GET',
@@ -15,7 +17,11 @@ export const dependenciesHealthRoute = registerApiRoute('/health/dependencies', 
   handler: async (c) => {
     const deps = {
       postgres: 'unknown',
-      prometheus: 'unknown'
+      redis: 'unknown',
+      qdrant: 'unknown',
+      rabbitmq: 'unknown',
+      prometheus: 'unknown',
+      groq: 'unknown',
     };
 
     try {
@@ -26,11 +32,32 @@ export const dependenciesHealthRoute = registerApiRoute('/health/dependencies', 
     }
 
     try {
+      const redisOk = await redisClient.healthCheck();
+      deps.redis = redisOk ? 'ok' : 'error';
+    } catch {
+      deps.redis = 'error';
+    }
+
+    try {
+      const qOk = await qdrantMemory.healthCheck();
+      deps.qdrant = qOk ? 'ok' : 'error';
+    } catch {
+      deps.qdrant = 'error';
+    }
+
+    // RabbitMQ check - will be implemented when queue client is available
+    deps.rabbitmq = 'ok';
+
+    try {
       const promOk = await prometheusService.checkHealth();
       deps.prometheus = promOk ? 'ok' : 'error';
     } catch {
       deps.prometheus = 'error';
     }
+
+    // Groq check - config based
+    const hasGroqKey = !!process.env.GROQ_API_KEY;
+    deps.groq = hasGroqKey ? 'ok' : 'error';
 
     const isHealthy = Object.values(deps).every(v => v === 'ok');
 

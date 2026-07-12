@@ -1,16 +1,16 @@
 # Stage 1: Build stage
 FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json pnpm-lock.yaml tsconfig.json ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+COPY package.json package-lock.json tsconfig.json ./
+RUN npm ci
 COPY . .
-RUN pnpm run build
+RUN npm run build
 
 # Stage 2: Runtime stage
 FROM node:22-alpine AS runner
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 COPY --from=builder /app/.mastra /app/.mastra
 COPY --from=builder /app/src/database/migrations /app/src/database/migrations
 EXPOSE 3000

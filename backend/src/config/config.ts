@@ -21,6 +21,9 @@ const envSchema = z.object({
   DB_CONNECTION_TIMEOUT: z.coerce.number().default(30000),
   DB_SSL: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
 
+  REDIS_URL: z.string().optional(),
+  RABBITMQ_URL: z.string().optional(),
+
   PROMETHEUS_URL: z.string().optional(),
   GRAFANA_URL: z.string().optional(),
   GRAFANA_API_KEY: z.string().optional(),
@@ -98,6 +101,12 @@ export const config = {
     idleTimeoutMillis: parsedEnv.DB_IDLE_TIMEOUT,
     connectionTimeoutMillis: parsedEnv.DB_CONNECTION_TIMEOUT,
     ssl: parsedEnv.DB_SSL,
+  },
+  redis: {
+    url: parsedEnv.REDIS_URL || 'redis://redis:6379',
+  },
+  rabbitmq: {
+    url: parsedEnv.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672',
   },
   logging: {
     level: parsedEnv.LOG_LEVEL,
